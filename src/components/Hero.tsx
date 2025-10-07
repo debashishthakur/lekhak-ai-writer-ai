@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Chrome, Sparkles } from "lucide-react";
+import { Chrome, ArrowRight } from "lucide-react";
 
 const Hero = () => {
   return (
@@ -8,67 +8,58 @@ const Hero = () => {
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-[120px] animate-pulse-glow" />
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/20 rounded-full blur-[120px] animate-pulse-glow" style={{ animationDelay: "1.5s" }} />
       
-      <div className="max-w-5xl mx-auto text-center space-y-12 relative z-10">
-        {/* Badge */}
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-card/50 border border-primary/30 backdrop-blur-sm animate-scale-in">
-          <Sparkles className="h-4 w-4 text-primary" />
-          <span className="text-sm font-medium">AI-Powered Writing Assistant</span>
-        </div>
-
+      <div className="max-w-6xl mx-auto text-center space-y-10 relative z-10">
         {/* Main heading with staggered animation */}
-        <div className="space-y-6">
+        <div className="space-y-8">
           <h1 
-            className="text-7xl md:text-8xl lg:text-9xl font-bold tracking-tight text-glow animate-slide-up-fade"
-            style={{ animationDelay: "0.2s", opacity: 0 }}
+            className="text-6xl md:text-7xl lg:text-8xl font-normal tracking-tight leading-tight animate-slide-up-fade"
+            style={{ animationDelay: "0.2s", opacity: 0, fontWeight: 400 }}
           >
-            Lekhak AI
+            Write better with AI,
+            <br />
+            <span className="font-light">effortlessly</span>
           </h1>
           <p 
-            className="text-xl md:text-2xl lg:text-3xl text-muted-foreground max-w-3xl mx-auto leading-relaxed animate-slide-up-fade"
+            className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed font-light animate-slide-up-fade"
             style={{ animationDelay: "0.4s", opacity: 0 }}
           >
-            Transform your thoughts into polished prose with the power of artificial intelligence
+            Leading research in AI writing technology,
+            <br />
+            transforming how you create content.
           </p>
         </div>
 
-        {/* CTA Buttons */}
+        {/* CTA Button */}
         <div 
-          className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-8 animate-slide-up-fade"
+          className="flex flex-col items-center gap-4 pt-4 animate-slide-up-fade"
           style={{ animationDelay: "0.6s", opacity: 0 }}
         >
           <Button 
-            size="lg" 
-            className="text-lg px-10 py-7 bg-primary hover:bg-primary/90 transition-all duration-300 hover:scale-105 hover:shadow-[0_0_40px_hsl(var(--primary)/0.5)] group"
+            variant="pill"
+            size="xl"
+            className="group"
           >
-            <Chrome className="mr-2 h-6 w-6 group-hover:rotate-12 transition-transform" />
-            Add to Chrome - It's Free
+            Get started for free
+            <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
           </Button>
-          <Button 
-            size="lg" 
-            variant="outline" 
-            className="text-lg px-10 py-7 border-2 border-primary/30 hover:border-primary/60 hover:bg-primary/10 transition-all duration-300 hover:scale-105"
-          >
-            Watch Demo
-          </Button>
+          <p className="text-sm text-muted-foreground font-light">
+            No credit card required
+          </p>
         </div>
 
-        {/* Stats */}
+        {/* Feature Pills */}
         <div 
-          className="grid grid-cols-3 gap-8 max-w-2xl mx-auto pt-16 animate-slide-up-fade"
+          className="flex flex-wrap justify-center gap-3 pt-8 animate-slide-up-fade"
           style={{ animationDelay: "0.8s", opacity: 0 }}
         >
-          <div className="space-y-2">
-            <div className="text-4xl font-bold text-primary">10K+</div>
-            <div className="text-sm text-muted-foreground">Active Users</div>
-          </div>
-          <div className="space-y-2">
-            <div className="text-4xl font-bold text-primary">5M+</div>
-            <div className="text-sm text-muted-foreground">Words Written</div>
-          </div>
-          <div className="space-y-2">
-            <div className="text-4xl font-bold text-primary">99%</div>
-            <div className="text-sm text-muted-foreground">Satisfaction</div>
-          </div>
+          {["Smart Rewriting", "Grammar Check", "Tone Adjustment", "Multi-Language", "AI Suggestions"].map((feature) => (
+            <div
+              key={feature}
+              className="px-6 py-3 rounded-full bg-card/50 border border-primary/20 backdrop-blur-sm text-sm font-light hover:border-primary/40 hover:bg-card/70 transition-all cursor-pointer"
+            >
+              {feature}
+            </div>
+          ))}
         </div>
       </div>
     </section>

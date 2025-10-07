@@ -42,14 +42,10 @@ const Features = () => {
       
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-20 space-y-6">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/30">
-            <Sparkles className="h-4 w-4 text-primary" />
-            <span className="text-sm font-medium">Features</span>
-          </div>
-          <h2 className="text-5xl md:text-6xl font-bold text-glow">
-            Everything You Need
+          <h2 className="text-5xl md:text-6xl font-light">
+            Everything you need
           </h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto font-light">
             Powerful AI tools designed to enhance your writing experience
           </p>
         </div>
@@ -69,8 +65,8 @@ const Features = () => {
                 <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 border border-primary/30">
                   <feature.icon className="h-7 w-7 text-primary" />
                 </div>
-                <h3 className="text-2xl font-semibold">{feature.title}</h3>
-                <p className="text-muted-foreground leading-relaxed">
+                <h3 className="text-xl font-medium">{feature.title}</h3>
+                <p className="text-muted-foreground leading-relaxed font-light">
                   {feature.description}
                 </p>
               </CardContent>
