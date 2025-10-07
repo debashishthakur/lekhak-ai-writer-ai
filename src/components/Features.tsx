@@ -1,51 +1,73 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Sparkles, Zap, Languages, FileText } from "lucide-react";
+import { Sparkles, Zap, Languages, FileText, Brain, Shield } from "lucide-react";
 
 const features = [
   {
-    icon: Sparkles,
-    title: "AI-Powered Writing",
-    description: "Generate, refine, and enhance your content with advanced AI algorithms.",
+    icon: Brain,
+    title: "Advanced AI Engine",
+    description: "Powered by state-of-the-art language models for intelligent writing assistance.",
   },
   {
     icon: Zap,
-    title: "Lightning Fast",
-    description: "Get instant suggestions and improvements without breaking your flow.",
+    title: "Real-Time Suggestions",
+    description: "Get instant improvements without interrupting your creative flow.",
   },
   {
     icon: Languages,
     title: "Multi-Language Support",
-    description: "Write confidently in multiple languages with intelligent translation.",
+    description: "Write confidently in 50+ languages with context-aware translations.",
   },
   {
     icon: FileText,
-    title: "Context-Aware",
-    description: "Smart assistance that understands your writing style and context.",
+    title: "Context Understanding",
+    description: "AI that learns your style and adapts to your unique voice.",
+  },
+  {
+    icon: Sparkles,
+    title: "Smart Rewriting",
+    description: "Transform your drafts into professional content with one click.",
+  },
+  {
+    icon: Shield,
+    title: "Privacy First",
+    description: "Your data stays private. We never store or train on your content.",
   },
 ];
 
 const Features = () => {
   return (
-    <section className="py-20 px-6">
+    <section className="py-32 px-6 relative">
+      {/* Background glow */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
+      
       <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-16 space-y-4">
-          <h2 className="text-4xl md:text-5xl font-bold">
-            Powerful Features
+        <div className="text-center mb-20 space-y-6">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/30">
+            <Sparkles className="h-4 w-4 text-primary" />
+            <span className="text-sm font-medium">Features</span>
+          </div>
+          <h2 className="text-5xl md:text-6xl font-bold text-glow">
+            Everything You Need
           </h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Everything you need to write better, faster, and smarter.
+            Powerful AI tools designed to enhance your writing experience
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {features.map((feature, index) => (
             <Card 
               key={index} 
-              className="bg-card border-border hover:border-primary/50 transition-all duration-300 hover:translate-y-[-4px]"
+              className="bg-card/50 backdrop-blur-sm border-primary/20 hover:border-primary/50 transition-all duration-500 hover:translate-y-[-8px] card-glow group"
+              style={{
+                animation: "slide-up-fade 0.6s ease-out forwards",
+                animationDelay: `${index * 0.1}s`,
+                opacity: 0,
+              }}
             >
               <CardContent className="p-8 space-y-4">
-                <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <feature.icon className="h-6 w-6 text-primary" />
+                <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 border border-primary/30">
+                  <feature.icon className="h-7 w-7 text-primary" />
                 </div>
                 <h3 className="text-2xl font-semibold">{feature.title}</h3>
                 <p className="text-muted-foreground leading-relaxed">
