@@ -1,34 +1,35 @@
 import { Button } from "@/components/ui/button";
 import { Chrome, ArrowRight } from "lucide-react";
-
 const Hero = () => {
-  return (
-    <section className="min-h-screen flex items-center justify-center px-6 py-20 relative overflow-hidden">
+  return <section className="min-h-screen flex items-center justify-center px-6 py-20 relative overflow-hidden">
       {/* Glowing orbs */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-[120px] animate-pulse-glow" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/20 rounded-full blur-[120px] animate-pulse-glow" style={{ animationDelay: "1.5s" }} />
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/20 rounded-full blur-[120px] animate-pulse-glow" style={{
+      animationDelay: "1.5s"
+    }} />
       
       <div className="max-w-6xl mx-auto text-center space-y-10 relative z-10">
         {/* Main heading with staggered animation */}
         <div className="space-y-8">
-          <h1 
-            className="text-7xl md:text-8xl lg:text-9xl font-normal tracking-tight leading-tight animate-slide-up-fade"
-            style={{ animationDelay: "0.2s", opacity: 0, fontWeight: 400 }}
-          >
-            <span className="text-glow">लेkhnak</span>
+          <h1 className="text-7xl md:text-8xl lg:text-9xl font-normal tracking-tight leading-tight animate-slide-up-fade" style={{
+          animationDelay: "0.2s",
+          opacity: 0,
+          fontWeight: 400
+        }}>
+            <span className="text-glow">लेkhak</span>
           </h1>
-          <h2 
-            className="text-3xl md:text-4xl lg:text-5xl font-normal tracking-tight leading-tight animate-slide-up-fade"
-            style={{ animationDelay: "0.3s", opacity: 0 }}
-          >
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-normal tracking-tight leading-tight animate-slide-up-fade" style={{
+          animationDelay: "0.3s",
+          opacity: 0
+        }}>
             Write better with AI,
             <br />
             <span className="font-light">effortlessly</span>
           </h2>
-          <p 
-            className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed font-light animate-slide-up-fade"
-            style={{ animationDelay: "0.4s", opacity: 0 }}
-          >
+          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed font-light animate-slide-up-fade" style={{
+          animationDelay: "0.4s",
+          opacity: 0
+        }}>
             Leading research in AI writing technology,
             <br />
             transforming how you create content.
@@ -36,15 +37,11 @@ const Hero = () => {
         </div>
 
         {/* CTA Button */}
-        <div 
-          className="flex flex-col items-center gap-4 pt-4 animate-slide-up-fade"
-          style={{ animationDelay: "0.6s", opacity: 0 }}
-        >
-          <Button 
-            variant="pill"
-            size="xl"
-            className="group"
-          >
+        <div className="flex flex-col items-center gap-4 pt-4 animate-slide-up-fade" style={{
+        animationDelay: "0.6s",
+        opacity: 0
+      }}>
+          <Button variant="pill" size="xl" className="group">
             Get started for free
             <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
           </Button>
@@ -54,22 +51,15 @@ const Hero = () => {
         </div>
 
         {/* Feature Pills */}
-        <div 
-          className="flex flex-wrap justify-center gap-3 pt-8 animate-slide-up-fade"
-          style={{ animationDelay: "0.8s", opacity: 0 }}
-        >
-          {["Smart Rewriting", "Grammar Check", "Tone Adjustment", "Multi-Language", "AI Suggestions"].map((feature) => (
-            <div
-              key={feature}
-              className="px-6 py-3 rounded-full bg-card/50 border border-primary/20 backdrop-blur-sm text-sm font-light hover:border-primary/40 hover:bg-card/70 transition-all cursor-pointer"
-            >
+        <div className="flex flex-wrap justify-center gap-3 pt-8 animate-slide-up-fade" style={{
+        animationDelay: "0.8s",
+        opacity: 0
+      }}>
+          {["Smart Rewriting", "Grammar Check", "Tone Adjustment", "Multi-Language", "AI Suggestions"].map(feature => <div key={feature} className="px-6 py-3 rounded-full bg-card/50 border border-primary/20 backdrop-blur-sm text-sm font-light hover:border-primary/40 hover:bg-card/70 transition-all cursor-pointer">
               {feature}
-            </div>
-          ))}
+            </div>)}
         </div>
       </div>
-    </section>
-  );
+    </section>;
 };
-
 export default Hero;
