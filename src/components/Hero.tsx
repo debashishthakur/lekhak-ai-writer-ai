@@ -8,28 +8,30 @@ const Hero = () => {
       animationDelay: "1.5s"
     }} />
       
-      <div className="max-w-6xl mx-auto text-center space-y-10 relative z-10">
-        {/* Main heading with staggered animation */}
-        <div className="space-y-8">
-          <h1 className="text-7xl md:text-8xl lg:text-9xl font-normal tracking-tight leading-tight animate-slide-up-fade" style={{
+      <div className="max-w-6xl mx-auto text-center relative z-10 flex flex-col items-center justify-center">
+        {/* Main heading - centered */}
+        <h1 className="text-7xl md:text-8xl lg:text-9xl font-normal tracking-tight leading-tight animate-slide-up-fade mb-12" style={{
           animationDelay: "0.2s",
           opacity: 0,
           fontWeight: 400
         }}>
-            <span className="text-glow">लेkhak</span>
-          </h1>
+          <span className="text-glow">लेkhak</span>
+        </h1>
+        
+        {/* Rest of content below */}
+        <div className="space-y-8">
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-normal tracking-tight leading-tight animate-slide-up-fade" style={{
-          animationDelay: "0.3s",
-          opacity: 0
-        }}>
+            animationDelay: "0.3s",
+            opacity: 0
+          }}>
             Write better with AI,
             <br />
             <span className="font-light">effortlessly</span>
           </h2>
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed font-light animate-slide-up-fade" style={{
-          animationDelay: "0.4s",
-          opacity: 0
-        }}>
+            animationDelay: "0.4s",
+            opacity: 0
+          }}>
             Leading research in AI writing technology,
             <br />
             transforming how you create content.
