@@ -12,13 +12,19 @@ const Hero = () => {
         {/* Main heading with staggered animation */}
         <div className="space-y-8">
           <h1 
-            className="text-6xl md:text-7xl lg:text-8xl font-normal tracking-tight leading-tight animate-slide-up-fade"
+            className="text-7xl md:text-8xl lg:text-9xl font-normal tracking-tight leading-tight animate-slide-up-fade"
             style={{ animationDelay: "0.2s", opacity: 0, fontWeight: 400 }}
+          >
+            <span className="text-glow">लेkhnak</span>
+          </h1>
+          <h2 
+            className="text-3xl md:text-4xl lg:text-5xl font-normal tracking-tight leading-tight animate-slide-up-fade"
+            style={{ animationDelay: "0.3s", opacity: 0 }}
           >
             Write better with AI,
             <br />
             <span className="font-light">effortlessly</span>
-          </h1>
+          </h2>
           <p 
             className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed font-light animate-slide-up-fade"
             style={{ animationDelay: "0.4s", opacity: 0 }}
