@@ -10,12 +10,14 @@ const Hero = () => {
       
       <div className="max-w-6xl mx-auto text-center relative z-10 flex flex-col items-center justify-center">
         {/* Main heading - centered */}
-        <h1 className="text-7xl md:text-8xl lg:text-9xl font-normal tracking-tight leading-tight animate-slide-up-fade mb-12" style={{
+        <h1 className="text-7xl md:text-8xl lg:text-9xl font-black tracking-tight leading-tight animate-slide-up-fade mb-12" style={{
           animationDelay: "0.2s",
           opacity: 0,
-          fontWeight: 400
+          fontWeight: 900,
+          letterSpacing: '-0.02em'
         }}>
-          <span className="text-glow">लेkhak</span>
+          <span className="text-glow text-[#7dd3fc]">ले</span>
+          <span className="text-white">khak</span>
         </h1>
         
         {/* Rest of content below */}
