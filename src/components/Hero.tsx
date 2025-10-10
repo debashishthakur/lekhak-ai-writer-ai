@@ -45,9 +45,8 @@ const Hero = () => {
         animationDelay: "0.6s",
         opacity: 0
       }}>
-          <Button variant="pill" size="xl" className="group">
-            Get started for free
-            <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+          <Button variant="pill" size="xl" disabled className="cursor-not-allowed opacity-80">
+            Coming soon! Stay tuned
           </Button>
           <p className="text-sm text-muted-foreground font-light">
             No credit card required
