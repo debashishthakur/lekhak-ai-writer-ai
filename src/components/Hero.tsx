@@ -111,6 +111,7 @@ const Hero = () => {
           >
             {getButtonContent()}
           </Button>
+          
           <p className="text-sm text-muted-foreground font-light">
             {isSignedIn ? "You're on the waitlist!" : "No credit card required"}
           </p>
