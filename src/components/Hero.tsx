@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Chrome, ArrowRight } from "lucide-react";
+import { LogIn, ArrowRight } from "lucide-react";
 const Hero = () => {
   return <section className="min-h-screen flex items-center justify-center px-6 py-20 relative overflow-hidden">
       {/* Glowing orbs */}
@@ -48,7 +48,7 @@ const Hero = () => {
           <Button variant="pill" size="xl" className="group">
             Join waitlist
             <span className="mx-3 text-muted-foreground">|</span>
-            <Chrome className="h-5 w-5" />
+            <LogIn className="h-5 w-5" />
           </Button>
           <p className="text-sm text-muted-foreground font-light">
             No credit card required
