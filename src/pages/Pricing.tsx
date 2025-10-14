@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import StarField from "@/components/StarField";
+import Navigation from "@/components/Navigation";
 
 const Pricing = () => {
   const navigate = useNavigate();
@@ -52,6 +53,7 @@ const Pricing = () => {
   return (
     <div className="gradient-animate min-h-screen relative">
       <StarField />
+      <Navigation />
       
       {/* Blurred background effect */}
       <div className="absolute inset-0 backdrop-blur-sm z-0" />

@@ -2,11 +2,9 @@ import { Button } from "@/components/ui/button";
 import { LogIn, CheckCircle, Loader2 } from "lucide-react";
 import { useGoogleAuth } from "@/contexts/GoogleAuthContext";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 const Hero = () => {
   const { user, isSignedIn, signIn, isLoading } = useGoogleAuth();
   const [isSigningIn, setIsSigningIn] = useState(false);
-  const navigate = useNavigate();
 
   const handleJoinWaitlist = async () => {
     if (isSignedIn) {
@@ -61,17 +59,6 @@ const Hero = () => {
   };
 
   return <section className="min-h-screen flex items-center justify-center px-6 py-20 relative overflow-hidden">
-      {/* Plans & Pricing Button */}
-      <div className="absolute top-8 right-8 z-20">
-        <Button 
-          variant="outline" 
-          onClick={() => navigate("/pricing")}
-          className="backdrop-blur-sm"
-        >
-          Plans & Pricing
-        </Button>
-      </div>
-
       {/* Glowing orbs */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-[120px] animate-pulse-glow" />
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/20 rounded-full blur-[120px] animate-pulse-glow" style={{
