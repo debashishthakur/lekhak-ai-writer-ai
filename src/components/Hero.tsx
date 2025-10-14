@@ -45,8 +45,10 @@ const Hero = () => {
         animationDelay: "0.6s",
         opacity: 0
       }}>
-          <Button variant="pill" size="xl" disabled className="cursor-not-allowed opacity-80">
-            Coming soon! Stay tuned
+          <Button variant="pill" size="xl" className="group">
+            Join waitlist
+            <span className="mx-3 text-muted-foreground">|</span>
+            <Chrome className="h-5 w-5" />
           </Button>
           <p className="text-sm text-muted-foreground font-light">
             No credit card required
