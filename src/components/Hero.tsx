@@ -1,6 +1,63 @@
 import { Button } from "@/components/ui/button";
-import { LogIn, ArrowRight } from "lucide-react";
+import { LogIn, CheckCircle, Loader2 } from "lucide-react";
+import { useGoogleAuth } from "@/contexts/GoogleAuthContext";
+import { useState } from "react";
 const Hero = () => {
+  const { user, isSignedIn, signIn, isLoading } = useGoogleAuth();
+  const [isSigningIn, setIsSigningIn] = useState(false);
+
+  const handleJoinWaitlist = async () => {
+    if (isSignedIn) {
+      return;
+    }
+
+    try {
+      setIsSigningIn(true);
+      await signIn();
+    } catch (error) {
+      console.error('Sign in failed:', error);
+    } finally {
+      setIsSigningIn(false);
+    }
+  };
+
+  const getButtonContent = () => {
+    if (isLoading) {
+      return (
+        <>
+          <Loader2 className="h-5 w-5 animate-spin" />
+          Loading...
+        </>
+      );
+    }
+
+    if (isSignedIn && user) {
+      return (
+        <>
+          <CheckCircle className="h-5 w-5" />
+          Welcome, {user.name.split(' ')[0]}!
+        </>
+      );
+    }
+
+    if (isSigningIn) {
+      return (
+        <>
+          <Loader2 className="h-5 w-5 animate-spin" />
+          Signing in...
+        </>
+      );
+    }
+
+    return (
+      <>
+        Join waitlist
+        <span className="mx-3 text-muted-foreground">|</span>
+        <LogIn className="h-5 w-5" />
+      </>
+    );
+  };
+
   return <section className="min-h-screen flex items-center justify-center px-6 py-20 relative overflow-hidden">
       {/* Glowing orbs */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-[120px] animate-pulse-glow" />
@@ -45,13 +102,17 @@ const Hero = () => {
         animationDelay: "0.6s",
         opacity: 0
       }}>
-          <Button variant="pill" size="xl" className="group">
-            Join waitlist
-            <span className="mx-3 text-muted-foreground">|</span>
-            <LogIn className="h-5 w-5" />
+          <Button 
+            variant="pill" 
+            size="xl" 
+            className="group" 
+            onClick={handleJoinWaitlist}
+            disabled={isLoading || isSigningIn || isSignedIn}
+          >
+            {getButtonContent()}
           </Button>
           <p className="text-sm text-muted-foreground font-light">
-            No credit card required
+            {isSignedIn ? "You're on the waitlist!" : "No credit card required"}
           </p>
         </div>
 
