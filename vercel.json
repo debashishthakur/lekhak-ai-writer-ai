@@ -1,12 +1,21 @@
 {
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/((?!api/.*).*)",
       "destination": "/index.html"
     }
   ],
   "functions": {
     "api/waitlist.js": {
+      "maxDuration": 30
+    },
+    "api/test-database.js": {
+      "maxDuration": 30
+    },
+    "api/check-env.js": {
+      "maxDuration": 10
+    },
+    "api/users/identify.js": {
       "maxDuration": 30
     }
   }
