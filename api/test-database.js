@@ -1,7 +1,7 @@
 // Test endpoint to verify database connection and functionality
-const { supabase, checkAndIncrementQuota, getSubscriptionPlans } = require('../lib/database.js');
+import { supabase, checkAndIncrementQuota, getSubscriptionPlans } from '../lib/database.js';
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }

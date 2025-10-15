@@ -1,5 +1,5 @@
 // Check environment variables
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   return res.status(200).json({
     supabase_url_exists: !!process.env.SUPABASE_URL,
     supabase_key_exists: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
