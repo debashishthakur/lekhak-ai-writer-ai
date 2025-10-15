@@ -1,5 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { useNavigate, useLocation } from "react-router-dom";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Navigation = () => {
   const navigate = useNavigate();
@@ -17,13 +23,37 @@ const Navigation = () => {
         </button>
         
         {location.pathname === "/" && (
-          <Button 
-            variant="outline" 
-            onClick={() => navigate("/pricing")}
-            className="backdrop-blur-sm"
-          >
-            Plans & Pricing
-          </Button>
+          <div className="flex items-center gap-3">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  className="backdrop-blur-sm"
+                >
+                  Policies
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="bg-background/95 backdrop-blur-sm">
+                <DropdownMenuItem onClick={() => navigate("/terms")}>
+                  Terms and Conditions
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/refund-policy")}>
+                  Refund Policy
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/privacy-policy")}>
+                  Privacy Policy
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            
+            <Button 
+              variant="outline" 
+              onClick={() => navigate("/pricing")}
+              className="backdrop-blur-sm"
+            >
+              Plans & Pricing
+            </Button>
+          </div>
         )}
       </div>
     </nav>
