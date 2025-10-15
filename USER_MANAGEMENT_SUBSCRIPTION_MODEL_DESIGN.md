@@ -163,12 +163,12 @@ Extension Installation → User Registration → 10 Free Uses → Payment Requir
 
 ### **Free Plan**
 - **Price**: $0/month
-- **Limits**: 10 uses per day
+- **Limits**: 7 uses per day
 - **Features**: Basic text rewriting
 - **Reset**: Daily at midnight UTC
 
 ### **Pro Plan**
-- **Price**: $9.99/month or $99.99/year
+- **Price**: $4.99/month
 - **Limits**: 1,000 uses per month
 - **Features**: 
   - Advanced AI rewriting
