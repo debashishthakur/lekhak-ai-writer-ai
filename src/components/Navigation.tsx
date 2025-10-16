@@ -56,6 +56,14 @@ const Navigation = () => {
             
             <Button 
               variant="outline" 
+              onClick={() => navigate("/support")}
+              className="backdrop-blur-sm"
+            >
+              Support
+            </Button>
+            
+            <Button 
+              variant="outline" 
               onClick={() => navigate("/pricing")}
               className="backdrop-blur-sm"
             >
