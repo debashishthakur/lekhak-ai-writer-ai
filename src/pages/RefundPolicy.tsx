@@ -241,6 +241,7 @@ const RefundPolicy = () => {
               <li>We follow Reserve Bank of India guidelines for digital payments</li>
               <li>All refunds processed according to PhonePe's terms and conditions</li>
               <li>Disputes subject to jurisdiction of Mumbai courts</li>
+              <li>If approved,Refund will be credited within 3-14 days to the original payment method. Cancellations should be done within 7 days.</li>
             </ul>
 
             <div className="border-t border-border pt-6 mt-8">
