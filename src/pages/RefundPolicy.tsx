@@ -248,6 +248,7 @@ const RefundPolicy = () => {
                 <h3 className="font-semibold mb-2">Our Commitment</h3>
                 <p className="text-sm">
                   We stand behind our Service and want you to be completely satisfied. If you're not happy with Lekhak AI for any reason, we'll work with you to make it right, whether that's through technical support, service credits, or a full refund.
+                  If approved,Refund will be credited within 3-14 days to the original payment method. Cancellations should be done within 10 days.
                 </p>
               </div>
             </div>

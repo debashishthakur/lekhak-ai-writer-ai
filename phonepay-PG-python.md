@@ -1,0 +1,9 @@
+https://developer.phonepe.com/payment-gateway/backend-sdk/python-be-sdk/introduction
+https://developer.phonepe.com/payment-gateway/backend-sdk/python-be-sdk/integration-steps
+https://developer.phonepe.com/payment-gateway/backend-sdk/python-be-sdk/sdk-reference-python/installation
+https://developer.phonepe.com/payment-gateway/backend-sdk/python-be-sdk/sdk-reference-python/class-initialization
+https://developer.phonepe.com/payment-gateway/backend-sdk/python-be-sdk/sdk-reference-python/initiate-payment
+https://developer.phonepe.com/payment-gateway/backend-sdk/python-be-sdk/sdk-reference-python/create-sdk-order
+https://developer.phonepe.com/payment-gateway/backend-sdk/python-be-sdk/sdk-reference-python/order-status
+https://developer.phonepe.com/payment-gateway/backend-sdk/python-be-sdk/sdk-reference-python/refund
+https://developer.phonepe.com/payment-gateway/backend-sdk/python-be-sdk/sdk-reference-python/webhook-handling

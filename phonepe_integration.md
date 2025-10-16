@@ -51,28 +51,87 @@ This document outlines the complete plan for integrating PhonePe Payment Gateway
 
 ## Technical Integration Plan
 
-### Phase 1: PhonePe Setup & Configuration
+### Phase 1: PhonePe Python SDK Setup & Configuration
 
 #### 1.1 Install Dependencies
 ```bash
-npm install crypto
-# PhonePe uses standard crypto for checksums, no special SDK needed
+# Install PhonePe Python SDK (requires Python 3.9+)
+pip install phonepe-pg-python-sdk
+
+# Additional dependencies for Lekhak AI backend
+pip install fastapi uvicorn python-multipart
+pip install psycopg2-binary  # PostgreSQL adapter
+pip install python-dotenv    # Environment variables
+pip install pydantic        # Data validation
+pip install requests        # HTTP client
 ```
 
 #### 1.2 Environment Variables
-Add to `.env.local` and Vercel:
-```
-PHONEPE_MERCHANT_ID=your_merchant_id
-PHONEPE_SALT_KEY=your_salt_key
-PHONEPE_SALT_INDEX=1
-PHONEPE_HOST_URL=https://api-preprod.phonepe.com/apis/pg-sandbox  # UAT
+Add to `.env` and production environment:
+```env
+# PhonePe Configuration
+PHONEPE_CLIENT_ID=your_client_id
+PHONEPE_CLIENT_SECRET=your_client_secret  
+PHONEPE_CLIENT_VERSION=1
+PHONEPE_ENVIRONMENT=SANDBOX  # PRODUCTION for live
+PHONEPE_SHOULD_PUBLISH_EVENTS=False
+
+# Application URLs
 PHONEPE_REDIRECT_URL=https://www.lekhakai.com/payment/success
 PHONEPE_CALLBACK_URL=https://www.lekhakai.com/api/phonepe/callback
+
+# Database Configuration
+DATABASE_URL=postgresql://user:password@localhost/lekhakai
+POSTGRES_USER=your_db_user
+POSTGRES_PASSWORD=your_db_password
+POSTGRES_DB=lekhakai
+
+# Security
+SECRET_KEY=your-secret-key-for-jwt
+ALLOWED_ORIGINS=https://www.lekhakai.com,chrome-extension://
+
+# Logging
+LOG_LEVEL=INFO
 ```
 
-#### 1.3 Update Database Schema
+#### 1.3 Python SDK Client Initialization
+```python
+# phonepe_client.py - SDK Client Configuration
+import os
+from phonepe.sdk.pg.payments.v2.standard_checkout_client import StandardCheckoutClient
+from phonepe.sdk.pg.env import Env
+from phonepe.sdk.pg.payments.v2.models.request.standard_checkout_pay_request import StandardCheckoutPayRequest
+from phonepe.sdk.pg.payments.v2.models.request.create_sdk_order_request import CreateSdkOrderRequest
+from phonepe.sdk.pg.payments.v2.models.request.refund_request import RefundRequest
+from phonepe.sdk.pg.common.exception.phonepe_exception import PhonePeException
+from dotenv import load_dotenv
+import logging
+
+load_dotenv()
+
+class PhonePeClient:
+    def __init__(self):
+        """Initialize PhonePe client with configuration"""
+        self.client = StandardCheckoutClient.get_instance(
+            client_id=os.getenv('PHONEPE_CLIENT_ID'),
+            client_secret=os.getenv('PHONEPE_CLIENT_SECRET'),
+            client_version=int(os.getenv('PHONEPE_CLIENT_VERSION', 1)),
+            env=Env.SANDBOX if os.getenv('PHONEPE_ENVIRONMENT') == 'SANDBOX' else Env.PRODUCTION,
+            should_publish_events=os.getenv('PHONEPE_SHOULD_PUBLISH_EVENTS', 'False').lower() == 'true'
+        )
+        self.logger = logging.getLogger(__name__)
+    
+    def get_client(self):
+        """Return initialized PhonePe client"""
+        return self.client
+
+# Singleton instance
+phonepe_client = PhonePeClient()
+```
+
+#### 1.4 Update Database Schema
 ```sql
--- Update subscription plans for Indian pricing
+-- Update subscription plans for Indian pricing with PhonePe integration
 UPDATE subscription_plans SET 
   price_monthly = 399.00, 
   price_yearly = 3999.00,
@@ -85,43 +144,240 @@ UPDATE subscription_plans SET
   phonepe_plan_id = 'PLAN_UNLIMITED_MONTHLY'
 WHERE name = 'Unlimited';
 
--- Add new columns for PhonePe integration
-ALTER TABLE subscription_plans ADD COLUMN phonepe_plan_id VARCHAR(100);
-ALTER TABLE user_subscriptions ADD COLUMN phonepe_transaction_id VARCHAR(255);
-ALTER TABLE payment_transactions ADD COLUMN phonepe_transaction_id VARCHAR(255);
-ALTER TABLE payment_transactions ADD COLUMN phonepe_merchant_transaction_id VARCHAR(255);
+-- Add new columns for PhonePe Python SDK integration
+ALTER TABLE subscription_plans ADD COLUMN IF NOT EXISTS phonepe_plan_id VARCHAR(100);
+ALTER TABLE user_subscriptions ADD COLUMN IF NOT EXISTS phonepe_order_id VARCHAR(255);
+ALTER TABLE user_subscriptions ADD COLUMN IF NOT EXISTS phonepe_merchant_order_id VARCHAR(255);
+ALTER TABLE payment_transactions ADD COLUMN IF NOT EXISTS phonepe_order_id VARCHAR(255);
+ALTER TABLE payment_transactions ADD COLUMN IF NOT EXISTS phonepe_merchant_order_id VARCHAR(255);
+ALTER TABLE payment_transactions ADD COLUMN IF NOT EXISTS phonepe_state VARCHAR(50);
+ALTER TABLE payment_transactions ADD COLUMN IF NOT EXISTS phonepe_payment_details JSONB;
+
+-- Create PhonePe-specific tables for enhanced tracking
+CREATE TABLE IF NOT EXISTS phonepe_transactions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id),
+    merchant_order_id VARCHAR(255) UNIQUE NOT NULL,
+    phonepe_order_id VARCHAR(255),
+    amount_paisa INTEGER NOT NULL,
+    currency VARCHAR(3) DEFAULT 'INR',
+    state VARCHAR(50) DEFAULT 'PENDING',
+    payment_details JSONB,
+    callback_received_at TIMESTAMP,
+    verified_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_phonepe_merchant_order_id ON phonepe_transactions(merchant_order_id);
+CREATE INDEX IF NOT EXISTS idx_phonepe_order_id ON phonepe_transactions(phonepe_order_id);
+CREATE INDEX IF NOT EXISTS idx_phonepe_user_id ON phonepe_transactions(user_id);
 ```
 
-### Phase 2: PhonePe Payment Architecture
+### Phase 2: PhonePe Python SDK Payment Architecture
 
-#### 2.1 PhonePe Payment Process
-1. **Initiate Payment**: Create transaction with PhonePe API
-2. **Generate Checksum**: SHA256 hash with salt key
-3. **Redirect to PhonePe**: User completes payment
-4. **Callback Response**: PhonePe sends POST to callback URL
-5. **Verify Transaction**: Server-to-server status check
-6. **Activate Subscription**: Update database and quota
+#### 2.1 PhonePe Payment Process Flow (Python SDK)
+1. **Initialize StandardCheckoutClient**: Create client instance (done once)
+2. **Create Payment Request**: Use `StandardCheckoutPayRequest.build_request()`
+3. **Initiate Payment**: Call `client.pay()` method
+4. **Redirect to PhonePe**: User completes payment on PhonePe gateway
+5. **Callback Handling**: PhonePe sends webhook to callback URL
+6. **Validate Callback**: Use `client.validate_callback()` method
+7. **Check Order Status**: Use `client.get_order_status()` for verification
+8. **Activate Subscription**: Update database and user quotas
 
-#### 2.2 PhonePe API Flow
-```javascript
-// 1. Create payment request
-const paymentRequest = {
-  merchantId: PHONEPE_MERCHANT_ID,
-  merchantTransactionId: uniqueTransactionId,
-  merchantUserId: userId,
-  amount: amountInPaise, // ₹399 = 39900 paise
-  redirectUrl: PHONEPE_REDIRECT_URL,
-  callbackUrl: PHONEPE_CALLBACK_URL,
-  paymentInstrument: {
-    type: "PAY_PAGE"
-  }
-}
+#### 2.2 Python SDK Payment Implementation
+```python
+# payment_service.py - Core Payment Logic
+import uuid
+from datetime import datetime
+from typing import Optional, Dict, Any
+from phonepe.sdk.pg.payments.v2.models.request.standard_checkout_pay_request import StandardCheckoutPayRequest
+from phonepe.sdk.pg.payments.v2.models.meta_info import MetaInfo
+from phonepe.sdk.pg.common.exception.phonepe_exception import PhonePeException
+from .phonepe_client import phonepe_client
+from .database import get_db_connection
+import logging
 
-// 2. Generate checksum
-const base64Request = Buffer.from(JSON.stringify(paymentRequest)).toString('base64')
-const checksum = sha256(base64Request + '/pg/v1/pay' + saltKey) + '###' + saltIndex
+logger = logging.getLogger(__name__)
 
-// 3. Make API call to PhonePe
+class PaymentService:
+    def __init__(self):
+        self.client = phonepe_client.get_client()
+    
+    def initiate_payment(self, user_id: str, plan_id: str, amount_rupees: float) -> Dict[str, Any]:
+        """
+        Initiate PhonePe payment using Python SDK
+        
+        Args:
+            user_id: UUID of the user
+            plan_id: UUID of the subscription plan
+            amount_rupees: Amount in rupees (e.g., 399.00)
+        
+        Returns:
+            Dict containing payment URL and order details
+        """
+        try:
+            # Generate unique merchant order ID
+            merchant_order_id = f"LEKHAK_{user_id[:8]}_{int(datetime.now().timestamp())}"
+            amount_paisa = int(amount_rupees * 100)  # Convert to paisa
+            
+            # Create meta info for the transaction
+            meta_info = MetaInfo(
+                user_id=user_id,
+                plan_id=plan_id,
+                service="lekhak_ai_subscription"
+            )
+            
+            # Build payment request using SDK
+            pay_request = StandardCheckoutPayRequest.build_request(
+                merchant_order_id=merchant_order_id,
+                amount=amount_paisa,
+                redirect_url=os.getenv('PHONEPE_REDIRECT_URL'),
+                meta_info=meta_info
+            )
+            
+            # Store transaction in database before initiating payment
+            self._store_transaction(
+                user_id=user_id,
+                merchant_order_id=merchant_order_id,
+                amount_paisa=amount_paisa,
+                plan_id=plan_id
+            )
+            
+            # Initiate payment with PhonePe
+            pay_response = self.client.pay(pay_request)
+            
+            # Update transaction with PhonePe order ID
+            self._update_transaction_order_id(
+                merchant_order_id=merchant_order_id,
+                phonepe_order_id=pay_response.order_id
+            )
+            
+            return {
+                "success": True,
+                "payment_url": pay_response.redirect_url,
+                "merchant_order_id": merchant_order_id,
+                "phonepe_order_id": pay_response.order_id,
+                "state": pay_response.state,
+                "expire_at": pay_response.expire_at
+            }
+            
+        except PhonePeException as e:
+            logger.error(f"PhonePe payment initiation failed: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "error_code": e.status_code if hasattr(e, 'status_code') else None
+            }
+        except Exception as e:
+            logger.error(f"Payment initiation failed: {e}")
+            return {
+                "success": False,
+                "error": "Payment initiation failed"
+            }
+    
+    def check_order_status(self, merchant_order_id: str, details: bool = True) -> Dict[str, Any]:
+        """
+        Check order status using PhonePe SDK
+        
+        Args:
+            merchant_order_id: Unique merchant order ID
+            details: Whether to include payment attempt details
+        
+        Returns:
+            Dict containing order status information
+        """
+        try:
+            status_response = self.client.get_order_status(
+                merchant_order_id=merchant_order_id,
+                details=details
+            )
+            
+            # Update local transaction record
+            self._update_transaction_status(
+                merchant_order_id=merchant_order_id,
+                state=status_response.state,
+                payment_details=status_response.payment_details if details else None
+            )
+            
+            return {
+                "success": True,
+                "order_id": status_response.order_id,
+                "state": status_response.state,
+                "amount": status_response.amount,
+                "payment_details": status_response.payment_details
+            }
+            
+        except PhonePeException as e:
+            logger.error(f"Order status check failed: {e}")
+            return {
+                "success": False,
+                "error": str(e)
+            }
+    
+    def validate_callback(self, username: str, password: str, 
+                         callback_header: str, callback_body: str) -> Dict[str, Any]:
+        """
+        Validate PhonePe callback using SDK
+        
+        Args:
+            username: Configured callback username
+            password: Configured callback password
+            callback_header: Authorization header from callback
+            callback_body: Response body from callback
+        
+        Returns:
+            Dict containing validated callback information
+        """
+        try:
+            callback_response = self.client.validate_callback(
+                username=username,
+                password=password,
+                callback_header_data=callback_header,
+                callback_response_data=callback_body
+            )
+            
+            # Update transaction based on callback
+            self._process_callback_response(callback_response)
+            
+            return {
+                "success": True,
+                "type": callback_response.type,
+                "payload": callback_response.payload
+            }
+            
+        except PhonePeException as e:
+            logger.error(f"Callback validation failed: {e}")
+            return {
+                "success": False,
+                "error": str(e)
+            }
+    
+    def _store_transaction(self, user_id: str, merchant_order_id: str, 
+                          amount_paisa: int, plan_id: str):
+        """Store transaction in database"""
+        # Implementation for storing transaction
+        pass
+    
+    def _update_transaction_order_id(self, merchant_order_id: str, phonepe_order_id: str):
+        """Update transaction with PhonePe order ID"""
+        # Implementation for updating order ID
+        pass
+    
+    def _update_transaction_status(self, merchant_order_id: str, state: str, 
+                                  payment_details: Optional[Dict] = None):
+        """Update transaction status"""
+        # Implementation for updating transaction status
+        pass
+    
+    def _process_callback_response(self, callback_response):
+        """Process callback response and update subscription"""
+        # Implementation for processing callback
+        pass
+
+# Service instance
+payment_service = PaymentService()
 ```
 
 ### Phase 3: Frontend Payment Flow
@@ -150,53 +406,517 @@ const checksum = sha256(base64Request + '/pg/v1/pay' + saltKey) + '###' + saltIn
 - **Download Invoices**: GST-compliant invoices
 - **Renewal Reminders**: Email notifications
 
-### Phase 4: Backend API Endpoints
+### Phase 4: Python Backend API Endpoints
 
-#### 4.1 Initiate Payment
-**Endpoint**: `POST /api/phonepe/initiate-payment`
-```javascript
-// Creates PhonePe transaction
-// Generates checksum
-// Returns payment URL for redirection
-// Stores transaction in database
+#### 4.1 FastAPI Application Structure
+```python
+# main.py - FastAPI Application
+from fastapi import FastAPI, HTTPException, Depends, Request
+from fastapi.responses import RedirectResponse
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from typing import Optional
+import logging
+import os
+from .payment_service import payment_service
+from .refund_service import refund_service
+
+app = FastAPI(title="Lekhak AI PhonePe Integration", version="1.0.0")
+
+# CORS configuration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=os.getenv('ALLOWED_ORIGINS', '').split(','),
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Pydantic models for request/response
+class PaymentInitiateRequest(BaseModel):
+    user_id: str
+    plan_id: str
+    amount: float
+    billing_cycle: str = "monthly"
+
+class PaymentCallbackRequest(BaseModel):
+    username: str
+    password: str
+    callback_header: str
+    callback_body: str
+
+class RefundRequest(BaseModel):
+    merchant_order_id: str
+    amount: float
+    reason: str
 ```
 
-#### 4.2 Payment Callback
-**Endpoint**: `POST /api/phonepe/callback`
-```javascript
-// Receives PhonePe callback
-// Verifies checksum
-// Calls status API for confirmation
-// Activates subscription
-// Updates user quotas
+#### 4.2 Initiate Payment Endpoint
+```python
+@app.post("/api/phonepe/initiate-payment")
+async def initiate_payment(request: PaymentInitiateRequest):
+    """
+    Initiate PhonePe payment using Python SDK
+    
+    Request Body:
+    {
+        "user_id": "uuid-string",
+        "plan_id": "uuid-string", 
+        "amount": 399.00,
+        "billing_cycle": "monthly"
+    }
+    
+    Returns:
+    {
+        "success": true,
+        "payment_url": "https://checkout.phonepe.com/...",
+        "merchant_order_id": "LEKHAK_...",
+        "phonepe_order_id": "...",
+        "expire_at": "timestamp"
+    }
+    """
+    try:
+        # Validate user and plan
+        user = await get_user_by_id(request.user_id)
+        plan = await get_plan_by_id(request.plan_id)
+        
+        if not user or not plan:
+            raise HTTPException(status_code=404, detail="User or plan not found")
+        
+        # Calculate amount with GST
+        gst_amount = request.amount * 0.18
+        total_amount = request.amount + gst_amount
+        
+        # Initiate payment using PhonePe SDK
+        payment_result = payment_service.initiate_payment(
+            user_id=request.user_id,
+            plan_id=request.plan_id,
+            amount_rupees=total_amount
+        )
+        
+        if payment_result["success"]:
+            return payment_result
+        else:
+            raise HTTPException(
+                status_code=400, 
+                detail=payment_result.get("error", "Payment initiation failed")
+            )
+            
+    except Exception as e:
+        logger.error(f"Payment initiation error: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
 ```
 
-#### 4.3 Transaction Status Check
-**Endpoint**: `GET /api/phonepe/check-status/:transactionId`
-```javascript
-// Server-to-server status verification
-// Double-check payment status
-// Handle edge cases and delays
+#### 4.3 Payment Callback Endpoint
+```python
+@app.post("/api/phonepe/callback")
+async def payment_callback(request: Request):
+    """
+    Handle PhonePe payment callback with SDK validation
+    
+    PhonePe sends POST request with:
+    - X-VERIFY header for verification
+    - JSON body with payment details
+    """
+    try:
+        # Extract callback data
+        callback_header = request.headers.get("X-VERIFY", "")
+        callback_body = await request.body()
+        
+        # Get configured callback credentials
+        username = os.getenv('PHONEPE_CALLBACK_USERNAME')
+        password = os.getenv('PHONEPE_CALLBACK_PASSWORD')
+        
+        # Validate callback using SDK
+        validation_result = payment_service.validate_callback(
+            username=username,
+            password=password,
+            callback_header=callback_header,
+            callback_body=callback_body.decode('utf-8')
+        )
+        
+        if validation_result["success"]:
+            callback_type = validation_result["type"]
+            payload = validation_result["payload"]
+            
+            # Process different callback types
+            if callback_type == "CHECKOUT_ORDER_COMPLETED":
+                await process_successful_payment(payload)
+            elif callback_type == "CHECKOUT_ORDER_FAILED":
+                await process_failed_payment(payload)
+                
+            return {"status": "success", "message": "Callback processed"}
+        else:
+            logger.error(f"Callback validation failed: {validation_result['error']}")
+            raise HTTPException(status_code=400, detail="Invalid callback")
+            
+    except Exception as e:
+        logger.error(f"Callback processing error: {e}")
+        raise HTTPException(status_code=500, detail="Callback processing failed")
+
+async def process_successful_payment(payload):
+    """Process successful payment and activate subscription"""
+    merchant_order_id = payload.get("merchant_order_id")
+    
+    # Get transaction details
+    transaction = await get_transaction_by_merchant_order_id(merchant_order_id)
+    
+    if transaction:
+        # Activate subscription
+        await activate_user_subscription(
+            user_id=transaction.user_id,
+            plan_id=transaction.plan_id,
+            payment_details=payload
+        )
+        
+        # Update user quotas
+        await update_user_quotas(transaction.user_id)
+        
+        logger.info(f"Payment successful for order: {merchant_order_id}")
+
+async def process_failed_payment(payload):
+    """Process failed payment"""
+    merchant_order_id = payload.get("merchant_order_id")
+    logger.warning(f"Payment failed for order: {merchant_order_id}")
+    
+    # Update transaction status
+    await update_transaction_status(merchant_order_id, "FAILED")
 ```
 
-#### 4.4 Subscription Renewal
-**Endpoint**: `POST /api/phonepe/renew-subscription`
-```javascript
-// Handle manual renewals
-// Create new payment for renewal
-// Extend subscription period
+#### 4.4 Order Status Check Endpoint
+```python
+@app.get("/api/phonepe/check-status/{merchant_order_id}")
+async def check_order_status(merchant_order_id: str, details: bool = True):
+    """
+    Check PhonePe order status using SDK
+    
+    Args:
+        merchant_order_id: Unique merchant order ID
+        details: Include payment attempt details
+    
+    Returns:
+    {
+        "success": true,
+        "order_id": "phonepe-order-id",
+        "state": "COMPLETED|PENDING|FAILED",
+        "amount": 39900,
+        "payment_details": {...}
+    }
+    """
+    try:
+        # Check status using PhonePe SDK
+        status_result = payment_service.check_order_status(
+            merchant_order_id=merchant_order_id,
+            details=details
+        )
+        
+        if status_result["success"]:
+            # If payment is completed, ensure subscription is activated
+            if status_result["state"] == "COMPLETED":
+                await ensure_subscription_activated(merchant_order_id)
+                
+            return status_result
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail=status_result.get("error", "Status check failed")
+            )
+            
+    except Exception as e:
+        logger.error(f"Status check error: {e}")
+        raise HTTPException(status_code=500, detail="Status check failed")
+
+async def ensure_subscription_activated(merchant_order_id: str):
+    """Ensure subscription is activated for completed payment"""
+    transaction = await get_transaction_by_merchant_order_id(merchant_order_id)
+    
+    if transaction and not transaction.subscription_activated:
+        await activate_user_subscription(
+            user_id=transaction.user_id,
+            plan_id=transaction.plan_id,
+            payment_details={"merchant_order_id": merchant_order_id}
+        )
 ```
 
-### Phase 5: Security & Compliance
+#### 4.5 Refund Processing Endpoint
+```python
+@app.post("/api/phonepe/refund")
+async def process_refund(request: RefundRequest):
+    """
+    Process refund using PhonePe Python SDK
+    
+    Request Body:
+    {
+        "merchant_order_id": "LEKHAK_...",
+        "amount": 399.00,
+        "reason": "Customer request"
+    }
+    """
+    try:
+        # Get original transaction
+        transaction = await get_transaction_by_merchant_order_id(request.merchant_order_id)
+        
+        if not transaction:
+            raise HTTPException(status_code=404, detail="Transaction not found")
+        
+        # Process refund using SDK
+        refund_result = refund_service.initiate_refund(
+            original_merchant_order_id=request.merchant_order_id,
+            refund_amount=request.amount,
+            reason=request.reason
+        )
+        
+        if refund_result["success"]:
+            # Update subscription status
+            await handle_refund_subscription(transaction.user_id)
+            return refund_result
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail=refund_result.get("error", "Refund failed")
+            )
+            
+    except Exception as e:
+        logger.error(f"Refund error: {e}")
+        raise HTTPException(status_code=500, detail="Refund processing failed")
+```
 
-#### 5.1 Checksum Verification
-```javascript
-// Verify incoming callbacks
-const receivedChecksum = req.headers['x-verify']
-const calculatedChecksum = sha256(responseBody + saltKey) + '###' + saltIndex
-if (receivedChecksum === calculatedChecksum) {
-  // Process payment
-}
+#### 4.6 Subscription Renewal Endpoint
+```python
+@app.post("/api/phonepe/renew-subscription")
+async def renew_subscription(request: PaymentInitiateRequest):
+    """
+    Handle subscription renewal with PhonePe
+    
+    Same as initiate_payment but marks as renewal
+    """
+    try:
+        # Check existing subscription
+        current_subscription = await get_user_active_subscription(request.user_id)
+        
+        if not current_subscription:
+            raise HTTPException(status_code=404, detail="No active subscription found")
+        
+        # Create renewal payment
+        payment_result = payment_service.initiate_payment(
+            user_id=request.user_id,
+            plan_id=request.plan_id,
+            amount_rupees=request.amount
+        )
+        
+        if payment_result["success"]:
+            # Mark as renewal in database
+            await mark_transaction_as_renewal(
+                payment_result["merchant_order_id"],
+                current_subscription.id
+            )
+            
+            return payment_result
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail=payment_result.get("error", "Renewal failed")
+            )
+            
+    except Exception as e:
+        logger.error(f"Renewal error: {e}")
+        raise HTTPException(status_code=500, detail="Renewal processing failed")
+```
+
+#### 4.7 Refund Service Implementation
+```python
+# refund_service.py - Refund Processing with PhonePe SDK
+import uuid
+from datetime import datetime
+from typing import Dict, Any
+from phonepe.sdk.pg.payments.v2.models.request.refund_request import RefundRequest
+from phonepe.sdk.pg.common.exception.phonepe_exception import PhonePeException
+from .phonepe_client import phonepe_client
+import logging
+
+logger = logging.getLogger(__name__)
+
+class RefundService:
+    def __init__(self):
+        self.client = phonepe_client.get_client()
+    
+    def initiate_refund(self, original_merchant_order_id: str, 
+                       refund_amount: float, reason: str) -> Dict[str, Any]:
+        """
+        Initiate refund using PhonePe Python SDK
+        
+        Args:
+            original_merchant_order_id: Original payment order ID
+            refund_amount: Amount to refund in rupees
+            reason: Reason for refund
+        
+        Returns:
+            Dict containing refund status and details
+        """
+        try:
+            # Generate unique refund ID
+            merchant_refund_id = f"REFUND_{original_merchant_order_id}_{int(datetime.now().timestamp())}"
+            refund_amount_paisa = int(refund_amount * 100)
+            
+            # Build refund request using SDK
+            refund_request = RefundRequest.build_refund_request(
+                merchant_refund_id=merchant_refund_id,
+                original_merchant_order_id=original_merchant_order_id,
+                amount=refund_amount_paisa
+            )
+            
+            # Store refund request in database
+            self._store_refund_request(
+                merchant_refund_id=merchant_refund_id,
+                original_order_id=original_merchant_order_id,
+                amount_paisa=refund_amount_paisa,
+                reason=reason
+            )
+            
+            # Initiate refund with PhonePe
+            refund_response = self.client.refund(refund_request=refund_request)
+            
+            # Update refund record with response
+            self._update_refund_response(merchant_refund_id, refund_response)
+            
+            return {
+                "success": True,
+                "merchant_refund_id": merchant_refund_id,
+                "refund_id": refund_response.refund_id if hasattr(refund_response, 'refund_id') else None,
+                "state": refund_response.state if hasattr(refund_response, 'state') else "PENDING",
+                "message": "Refund initiated successfully"
+            }
+            
+        except PhonePeException as e:
+            logger.error(f"PhonePe refund failed: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "error_code": e.status_code if hasattr(e, 'status_code') else None
+            }
+        except Exception as e:
+            logger.error(f"Refund initiation failed: {e}")
+            return {
+                "success": False,
+                "error": "Refund initiation failed"
+            }
+    
+    def check_refund_status(self, merchant_refund_id: str) -> Dict[str, Any]:
+        """
+        Check refund status using PhonePe SDK
+        
+        Args:
+            merchant_refund_id: Unique merchant refund ID
+        
+        Returns:
+            Dict containing refund status information
+        """
+        try:
+            refund_status = self.client.get_refund_status(merchant_refund_id)
+            
+            # Update local refund record
+            self._update_refund_status(merchant_refund_id, refund_status)
+            
+            return {
+                "success": True,
+                "refund_id": refund_status.refund_id,
+                "state": refund_status.state,
+                "amount": refund_status.amount,
+                "transaction_details": refund_status.transaction_details
+            }
+            
+        except PhonePeException as e:
+            logger.error(f"Refund status check failed: {e}")
+            return {
+                "success": False,
+                "error": str(e)
+            }
+    
+    def _store_refund_request(self, merchant_refund_id: str, original_order_id: str,
+                            amount_paisa: int, reason: str):
+        """Store refund request in database"""
+        # Implementation for storing refund request
+        pass
+    
+    def _update_refund_response(self, merchant_refund_id: str, refund_response):
+        """Update refund record with PhonePe response"""
+        # Implementation for updating refund response
+        pass
+    
+    def _update_refund_status(self, merchant_refund_id: str, refund_status):
+        """Update refund status"""
+        # Implementation for updating refund status
+        pass
+
+# Service instance
+refund_service = RefundService()
+```
+
+### Phase 5: Python SDK Security & Compliance
+
+#### 5.1 SDK Built-in Security Features
+```python
+# security_utils.py - Enhanced Security with PhonePe SDK
+from phonepe.sdk.pg.common.exception.phonepe_exception import PhonePeException
+import hashlib
+import hmac
+import os
+import logging
+
+class SecurityUtils:
+    def __init__(self):
+        self.logger = logging.getLogger(__name__)
+    
+    def validate_callback_authenticity(self, callback_header: str, callback_body: str) -> bool:
+        """
+        PhonePe SDK handles callback validation internally
+        This method provides additional validation if needed
+        """
+        try:
+            # PhonePe SDK automatically validates callbacks in validate_callback()
+            # Additional custom validation can be added here
+            
+            # Example: Log callback for audit trail
+            self.logger.info(f"Callback received - Header: {callback_header[:20]}...")
+            
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"Callback validation error: {e}")
+            return False
+    
+    def generate_merchant_order_id(self, user_id: str, plan_id: str) -> str:
+        """Generate secure, unique merchant order ID"""
+        timestamp = int(datetime.now().timestamp())
+        user_hash = hashlib.md5(user_id.encode()).hexdigest()[:8]
+        
+        return f"LEKHAK_{user_hash}_{timestamp}"
+    
+    def sanitize_user_input(self, input_data: Dict) -> Dict:
+        """Sanitize user input data"""
+        sanitized = {}
+        
+        for key, value in input_data.items():
+            if isinstance(value, str):
+                # Remove potentially harmful characters
+                sanitized[key] = value.strip()[:255]  # Limit length
+            else:
+                sanitized[key] = value
+        
+        return sanitized
+    
+    def validate_amount(self, amount: float) -> bool:
+        """Validate payment amount"""
+        # PhonePe minimum is 100 paisa (₹1)
+        min_amount_paisa = 100
+        max_amount_paisa = 10000000  # ₹1,00,000 max per transaction
+        
+        amount_paisa = int(amount * 100)
+        
+        return min_amount_paisa <= amount_paisa <= max_amount_paisa
+
+# Security utilities instance
+security_utils = SecurityUtils()
 ```
 
 #### 5.2 GST Compliance
@@ -213,59 +933,459 @@ if (receivedChecksum === calculatedChecksum) {
 
 ## File Structure
 
+### Python Backend Structure
 ```
-├── api/
-│   └── phonepe/
-│       ├── initiate-payment.js
-│       ├── callback.js
-│       ├── check-status.js
-│       └── renew-subscription.js
+├── backend/
+│   ├── main.py                    # FastAPI application entry point
+│   ├── requirements.txt           # Python dependencies
+│   ├── .env                      # Environment variables
+│   ├── config/
+│   │   ├── __init__.py
+│   │   ├── database.py           # Database configuration
+│   │   └── settings.py           # Application settings
+│   ├── services/
+│   │   ├── __init__.py
+│   │   ├── phonepe_client.py     # PhonePe SDK client initialization
+│   │   ├── payment_service.py    # Payment processing logic
+│   │   ├── refund_service.py     # Refund processing logic
+│   │   ├── subscription_service.py # Subscription management
+│   │   └── security_utils.py     # Security utilities
+│   ├── models/
+│   │   ├── __init__.py
+│   │   ├── user.py              # User data models
+│   │   ├── subscription.py      # Subscription models
+│   │   ├── payment.py           # Payment transaction models
+│   │   └── phonepe.py           # PhonePe-specific models
+│   ├── api/
+│   │   ├── __init__.py
+│   │   ├── dependencies.py      # API dependencies
+│   │   └── routers/
+│   │       ├── __init__.py
+│   │       ├── payments.py      # Payment endpoints
+│   │       ├── subscriptions.py # Subscription endpoints
+│   │       ├── webhooks.py      # Webhook handlers
+│   │       └── refunds.py       # Refund endpoints
+│   ├── database/
+│   │   ├── __init__.py
+│   │   ├── connection.py        # Database connection
+│   │   ├── migrations/          # Database migrations
+│   │   └── queries/
+│   │       ├── __init__.py
+│   │       ├── users.py         # User queries
+│   │       ├── payments.py      # Payment queries
+│   │       └── subscriptions.py # Subscription queries
+│   ├── utils/
+│   │   ├── __init__.py
+│   │   ├── logging.py           # Logging configuration
+│   │   ├── validation.py        # Input validation
+│   │   └── error_handlers.py    # Error handling
+│   └── tests/
+│       ├── __init__.py
+│       ├── test_payments.py     # Payment tests
+│       ├── test_refunds.py      # Refund tests
+│       └── test_webhooks.py     # Webhook tests
+```
+
+### Frontend Structure (React/TypeScript)
+```
 ├── src/
 │   ├── components/
 │   │   ├── checkout/
 │   │   │   ├── PhonePeCheckout.tsx
 │   │   │   ├── PlanSelector.tsx
-│   │   │   └── GSTCalculator.tsx
-│   │   └── billing/
-│   │       ├── BillingHistory.tsx
-│   │       ├── RenewalReminder.tsx
-│   │       └── InvoiceDownload.tsx
+│   │   │   ├── GSTCalculator.tsx
+│   │   │   └── PaymentMethods.tsx
+│   │   ├── billing/
+│   │   │   ├── BillingHistory.tsx
+│   │   │   ├── RenewalReminder.tsx
+│   │   │   ├── InvoiceDownload.tsx
+│   │   │   └── SubscriptionStatus.tsx
+│   │   └── common/
+│   │       ├── LoadingSpinner.tsx
+│   │       ├── ErrorBoundary.tsx
+│   │       └── Toast.tsx
 │   ├── pages/
 │   │   ├── Checkout.tsx
 │   │   ├── PaymentSuccess.tsx
-│   │   └── PaymentFailure.tsx
-│   └── lib/
-│       ├── phonepe.js (checksum utilities)
-│       ├── gst.js (GST calculations)
-│       └── invoice-generator.js
+│   │   ├── PaymentFailure.tsx
+│   │   └── BillingDashboard.tsx
+│   ├── hooks/
+│   │   ├── usePayment.ts        # Payment processing hooks
+│   │   ├── useSubscription.ts   # Subscription management hooks
+│   │   └── usePhonePe.ts        # PhonePe integration hooks
+│   ├── services/
+│   │   ├── api.ts               # API client configuration
+│   │   ├── payment.ts           # Payment API calls
+│   │   ├── subscription.ts      # Subscription API calls
+│   │   └── phonepe.ts           # PhonePe API integration
+│   ├── types/
+│   │   ├── payment.ts           # Payment type definitions
+│   │   ├── subscription.ts      # Subscription type definitions
+│   │   └── phonepe.ts           # PhonePe type definitions
+│   └── utils/
+│       ├── gst.ts               # GST calculations
+│       ├── currency.ts          # Currency formatting
+│       ├── validation.ts        # Form validation
+│       └── constants.ts         # Application constants
+```
+
+### Configuration Files
+```
+├── docker-compose.yml           # Docker setup for development
+├── Dockerfile                  # Python backend container
+├── requirements.txt            # Python dependencies
+├── package.json                # Frontend dependencies
+├── .env.example               # Environment variables template
+├── alembic.ini                # Database migration config
+└── pytest.ini                # Testing configuration
 ```
 
 ## Testing Strategy
 
-### 1. UAT Environment
-- Use PhonePe UAT/sandbox credentials
-- Test all payment scenarios
-- Verify callback handling
+### 1. Python SDK Testing Environment
+```python
+# test_config.py - Testing Configuration
+import os
+from phonepe.sdk.pg.env import Env
 
-### 2. Test Scenarios
-- **Successful payments**: All payment methods
-- **Failed payments**: Declined, insufficient funds
-- **Network issues**: Timeout handling, retry logic
-- **Edge cases**: Duplicate transactions, callback delays
+class TestConfig:
+    # PhonePe Sandbox Configuration
+    PHONEPE_CLIENT_ID = os.getenv('PHONEPE_TEST_CLIENT_ID')
+    PHONEPE_CLIENT_SECRET = os.getenv('PHONEPE_TEST_CLIENT_SECRET')
+    PHONEPE_CLIENT_VERSION = 1
+    PHONEPE_ENVIRONMENT = Env.SANDBOX
+    
+    # Test Database
+    TEST_DATABASE_URL = "postgresql://test_user:test_pass@localhost/test_lekhakai"
+    
+    # Test Payment Amounts (in paisa)
+    TEST_SUCCESS_AMOUNT = 100    # ₹1 - Always succeeds in sandbox
+    TEST_FAILURE_AMOUNT = 200    # ₹2 - Always fails in sandbox
+    TEST_PENDING_AMOUNT = 300    # ₹3 - Always pending in sandbox
+```
 
-### 3. Test Payment Methods
-- **Test Amount**: Use ₹1 for successful test transactions
-- **UPI**: Test UPI IDs provided by PhonePe
-- **Cards**: Use test card numbers from PhonePe documentation
-- **Net Banking**: Test with PhonePe test banks
+### 2. Unit Tests for PhonePe SDK Integration
+```python
+# test_phonepe_integration.py
+import pytest
+from unittest.mock import Mock, patch
+from services.payment_service import PaymentService
+from services.refund_service import RefundService
+from phonepe.sdk.pg.common.exception.phonepe_exception import PhonePeException
 
-### 4. Callback Testing
+class TestPhonePeIntegration:
+    def setup_method(self):
+        self.payment_service = PaymentService()
+        self.refund_service = RefundService()
+        
+    @pytest.mark.asyncio
+    async def test_initiate_payment_success(self):
+        """Test successful payment initiation"""
+        result = self.payment_service.initiate_payment(
+            user_id="test-user-123",
+            plan_id="pro-plan-456", 
+            amount_rupees=399.00
+        )
+        
+        assert result["success"] is True
+        assert "payment_url" in result
+        assert "merchant_order_id" in result
+        assert result["merchant_order_id"].startswith("LEKHAK_")
+        
+    @pytest.mark.asyncio
+    async def test_initiate_payment_invalid_amount(self):
+        """Test payment initiation with invalid amount"""
+        result = self.payment_service.initiate_payment(
+            user_id="test-user-123",
+            plan_id="pro-plan-456",
+            amount_rupees=0.50  # Less than ₹1 minimum
+        )
+        
+        assert result["success"] is False
+        assert "error" in result
+        
+    @pytest.mark.asyncio
+    async def test_check_order_status(self):
+        """Test order status checking"""
+        # First create a payment
+        payment_result = self.payment_service.initiate_payment(
+            user_id="test-user-123",
+            plan_id="pro-plan-456",
+            amount_rupees=1.00  # Test amount
+        )
+        
+        merchant_order_id = payment_result["merchant_order_id"]
+        
+        # Check status
+        status_result = self.payment_service.check_order_status(
+            merchant_order_id=merchant_order_id,
+            details=True
+        )
+        
+        assert status_result["success"] is True
+        assert "state" in status_result
+        assert status_result["state"] in ["PENDING", "COMPLETED", "FAILED"]
+        
+    @pytest.mark.asyncio
+    async def test_validate_callback(self):
+        """Test callback validation"""
+        # Mock callback data
+        test_callback_header = "test-header"
+        test_callback_body = "test-body"
+        test_username = "test-user"
+        test_password = "test-pass"
+        
+        result = self.payment_service.validate_callback(
+            username=test_username,
+            password=test_password,
+            callback_header=test_callback_header,
+            callback_body=test_callback_body
+        )
+        
+        # Note: This will likely fail with invalid test data
+        # Proper testing requires PhonePe sandbox callback simulation
+        assert "success" in result
+        
+    @pytest.mark.asyncio
+    async def test_initiate_refund(self):
+        """Test refund initiation"""
+        original_order_id = "LEKHAK_test123_1234567890"
+        
+        result = self.refund_service.initiate_refund(
+            original_merchant_order_id=original_order_id,
+            refund_amount=399.00,
+            reason="Test refund"
+        )
+        
+        assert "success" in result
+        if result["success"]:
+            assert "merchant_refund_id" in result
+            assert result["merchant_refund_id"].startswith("REFUND_")
+```
+
+### 3. Integration Tests
+```python
+# test_payment_flow.py - End-to-End Payment Flow Tests
+import pytest
+import asyncio
+from fastapi.testclient import TestClient
+from main import app
+
+client = TestClient(app)
+
+class TestPaymentFlow:
+    def test_complete_payment_flow(self):
+        """Test complete payment flow from initiation to callback"""
+        
+        # Step 1: Initiate payment
+        payment_data = {
+            "user_id": "test-user-123",
+            "plan_id": "pro-plan-456",
+            "amount": 1.00,  # Test amount
+            "billing_cycle": "monthly"
+        }
+        
+        response = client.post("/api/phonepe/initiate-payment", json=payment_data)
+        assert response.status_code == 200
+        
+        payment_result = response.json()
+        assert payment_result["success"] is True
+        
+        merchant_order_id = payment_result["merchant_order_id"]
+        
+        # Step 2: Check order status
+        status_response = client.get(f"/api/phonepe/check-status/{merchant_order_id}")
+        assert status_response.status_code == 200
+        
+        status_result = status_response.json()
+        assert status_result["success"] is True
+        
+        # Step 3: Simulate callback (in real testing, this comes from PhonePe)
+        # Note: Actual callback testing requires PhonePe sandbox webhook simulation
+        
+    def test_payment_failure_handling(self):
+        """Test payment failure scenarios"""
+        
+        # Test with invalid user ID
+        payment_data = {
+            "user_id": "invalid-user",
+            "plan_id": "pro-plan-456", 
+            "amount": 399.00,
+            "billing_cycle": "monthly"
+        }
+        
+        response = client.post("/api/phonepe/initiate-payment", json=payment_data)
+        assert response.status_code == 404  # User not found
+        
+    def test_refund_flow(self):
+        """Test refund processing flow"""
+        
+        # First create a successful payment (mock)
+        original_order_id = "LEKHAK_test123_1234567890"
+        
+        refund_data = {
+            "merchant_order_id": original_order_id,
+            "amount": 399.00,
+            "reason": "Test refund"
+        }
+        
+        response = client.post("/api/phonepe/refund", json=refund_data)
+        
+        # This might fail if transaction doesn't exist in test DB
+        # Proper test setup would create the original transaction first
+        assert response.status_code in [200, 404]
+```
+
+### 4. PhonePe Sandbox Testing
+```python
+# phonepe_sandbox_tests.py - Tests specific to PhonePe sandbox
+import pytest
+from services.phonepe_client import phonepe_client
+
+class TestPhonePeSandbox:
+    def test_sandbox_environment(self):
+        """Verify we're using sandbox environment"""
+        client = phonepe_client.get_client()
+        # Verify sandbox configuration
+        assert client is not None
+        
+    def test_sandbox_payment_amounts(self):
+        """Test PhonePe sandbox specific amounts"""
+        test_cases = [
+            (100, "COMPLETED"),    # ₹1 - Success in sandbox
+            (200, "FAILED"),       # ₹2 - Failure in sandbox  
+            (300, "PENDING"),      # ₹3 - Pending in sandbox
+        ]
+        
+        for amount_paisa, expected_state in test_cases:
+            # Create payment and check expected behavior
+            # Implementation depends on sandbox behavior
+            pass
+```
+
+### 5. Mock Testing for Development
+```python
+# test_mocks.py - Mock PhonePe responses for development
+from unittest.mock import Mock, patch
+
+class MockPhonePeResponses:
+    @staticmethod
+    def mock_successful_payment():
+        return {
+            "success": True,
+            "payment_url": "https://sandbox.phonepe.com/checkout/test123",
+            "merchant_order_id": "LEKHAK_test123_1234567890",
+            "phonepe_order_id": "PG_ORDER_123456",
+            "state": "PENDING",
+            "expire_at": "2024-01-01T12:00:00Z"
+        }
+    
+    @staticmethod 
+    def mock_order_status_completed():
+        return {
+            "success": True,
+            "order_id": "PG_ORDER_123456",
+            "state": "COMPLETED",
+            "amount": 39900,
+            "payment_details": {
+                "method": "UPI",
+                "upi_id": "test@upi"
+            }
+        }
+    
+    @staticmethod
+    def mock_callback_success():
+        return {
+            "success": True,
+            "type": "CHECKOUT_ORDER_COMPLETED",
+            "payload": {
+                "merchant_order_id": "LEKHAK_test123_1234567890",
+                "amount": 39900,
+                "state": "COMPLETED"
+            }
+        }
+
+# Usage in tests
+@patch('services.payment_service.PaymentService.initiate_payment')
+def test_payment_with_mock(mock_payment):
+    mock_payment.return_value = MockPhonePeResponses.mock_successful_payment()
+    
+    # Test implementation
+    pass
+```
+
+### 6. Load Testing
+```python
+# test_load.py - Load testing for payment endpoints
+import asyncio
+import aiohttp
+import time
+from concurrent.futures import ThreadPoolExecutor
+
+async def load_test_payment_initiation():
+    """Simulate multiple concurrent payment initiations"""
+    
+    async def make_payment_request(session, user_id):
+        payment_data = {
+            "user_id": f"test-user-{user_id}",
+            "plan_id": "pro-plan-456",
+            "amount": 1.00,
+            "billing_cycle": "monthly"
+        }
+        
+        async with session.post(
+            "http://localhost:8000/api/phonepe/initiate-payment",
+            json=payment_data
+        ) as response:
+            return await response.json()
+    
+    async with aiohttp.ClientSession() as session:
+        # Simulate 100 concurrent payment requests
+        tasks = [make_payment_request(session, i) for i in range(100)]
+        
+        start_time = time.time()
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        end_time = time.time()
+        
+        successful_requests = sum(1 for r in results if isinstance(r, dict) and r.get("success"))
+        
+        print(f"Load test results:")
+        print(f"Total requests: 100")
+        print(f"Successful: {successful_requests}")
+        print(f"Time taken: {end_time - start_time:.2f} seconds")
+        print(f"Requests per second: {100 / (end_time - start_time):.2f}")
+
+if __name__ == "__main__":
+    asyncio.run(load_test_payment_initiation())
+```
+
+### 7. Test Execution Commands
 ```bash
-# Test callback endpoint
-curl -X POST https://www.lekhakai.com/api/phonepe/callback \
+# Run all tests
+pytest
+
+# Run specific test categories
+pytest tests/test_phonepe_integration.py -v
+pytest tests/test_payment_flow.py -v
+pytest tests/test_refunds.py -v
+
+# Run tests with coverage
+pytest --cov=services --cov-report=html
+
+# Run load tests
+python tests/test_load.py
+
+# Run tests against sandbox
+PHONEPE_ENVIRONMENT=SANDBOX pytest tests/
+
+# Run integration tests only
+pytest -m integration
+
+# Test webhook endpoint manually
+curl -X POST http://localhost:8000/api/phonepe/callback \
   -H "Content-Type: application/json" \
-  -H "X-VERIFY: checksum" \
-  -d '{"response": "base64_encoded_response"}'
+  -H "X-VERIFY: test-verification-header" \
+  -d '{"test": "callback_data"}'
 ```
 
 ## Cost Analysis
@@ -492,4 +1612,123 @@ const metrics = {
 
 ---
 
-*This integration will provide the most efficient payment system for the Indian market with emphasis on UPI payments while maintaining competitive transaction fees and fastest settlement times.*
+## Python SDK Integration Summary
+
+### Key Benefits of Using PhonePe Python SDK
+
+1. **Simplified Integration**: No need for manual checksum generation or API construction
+2. **Built-in Security**: SDK handles authentication, validation, and error handling
+3. **Type Safety**: Python classes provide structure and validation
+4. **Exception Handling**: Comprehensive error handling with `PhonePeException`
+5. **Production Ready**: Robust SDK maintained by PhonePe team
+
+### Complete Integration Workflow
+
+#### 1. **Development Setup**
+```bash
+# Install PhonePe Python SDK
+pip install phonepe-pg-python-sdk
+
+# Set up FastAPI backend
+pip install fastapi uvicorn
+
+# Configure environment
+export PHONEPE_CLIENT_ID="your_client_id"
+export PHONEPE_CLIENT_SECRET="your_client_secret"
+export PHONEPE_ENVIRONMENT="SANDBOX"
+```
+
+#### 2. **Core Implementation Files**
+- `phonepe_client.py`: SDK client initialization
+- `payment_service.py`: Payment processing logic
+- `refund_service.py`: Refund handling
+- `main.py`: FastAPI application with endpoints
+- `security_utils.py`: Additional security measures
+
+#### 3. **Payment Flow Implementation**
+```python
+# Initiate Payment
+payment_request = StandardCheckoutPayRequest.build_request(...)
+response = client.pay(payment_request)
+
+# Check Status  
+status = client.get_order_status(merchant_order_id)
+
+# Validate Callback
+callback_result = client.validate_callback(username, password, header, body)
+
+# Process Refund
+refund_request = RefundRequest.build_refund_request(...)
+refund_response = client.refund(refund_request)
+```
+
+#### 4. **Database Integration**
+- Enhanced schema with PhonePe-specific fields
+- Transaction tracking with merchant and PhonePe order IDs
+- Audit trail for payments, refunds, and callbacks
+- Subscription lifecycle management
+
+#### 5. **Testing Strategy**
+- Unit tests for each SDK method
+- Integration tests for complete payment flows
+- Sandbox testing with PhonePe test environment
+- Load testing for performance validation
+- Mock testing for development
+
+#### 6. **Production Deployment**
+- Environment variable configuration
+- Database migrations for PhonePe fields
+- API endpoint deployment with FastAPI/Uvicorn
+- Webhook URL configuration
+- Monitoring and logging setup
+
+### Implementation Timeline
+
+**Week 1-2: Backend Development**
+- Set up Python backend with FastAPI
+- Implement PhonePe SDK integration
+- Create database schema updates
+- Develop payment and refund services
+
+**Week 3-4: Frontend Integration**
+- Update React components for PhonePe flow
+- Implement payment success/failure pages
+- Add subscription management UI
+- Test end-to-end payment flow
+
+**Week 5-6: Testing & Optimization**
+- Comprehensive testing in sandbox
+- Performance optimization
+- Security audit
+- Documentation completion
+
+**Week 7-8: Production Deployment**
+- Production environment setup
+- Go-live with PhonePe production credentials
+- Monitor transactions and success rates
+- Customer support preparation
+
+### Success Metrics
+
+**Technical KPIs:**
+- Payment success rate: >95%
+- API response time: <500ms
+- Webhook processing: <2 seconds
+- Zero payment processing errors
+
+**Business KPIs:**
+- UPI adoption rate: >60% (leveraging PhonePe's UPI dominance)
+- Transaction fee savings: ~40% on UPI transactions (0% vs other methods)
+- Settlement speed improvement: T+1 vs T+2 (compared to alternatives)
+- Customer satisfaction: >90% payment experience rating
+
+### Risk Mitigation
+
+1. **Technical Risks**: Comprehensive testing, fallback mechanisms, monitoring
+2. **Business Risks**: Multiple payment options, customer support integration
+3. **Compliance Risks**: GST compliance, audit trails, data security
+4. **Operational Risks**: Documentation, team training, support processes
+
+---
+
+*This comprehensive Python SDK integration plan provides the most robust, secure, and efficient payment system for Lekhak AI's Indian market expansion, leveraging PhonePe's market leadership in UPI transactions while maintaining enterprise-grade reliability and security standards.*

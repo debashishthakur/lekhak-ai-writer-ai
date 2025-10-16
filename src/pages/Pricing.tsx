@@ -11,7 +11,7 @@ const Pricing = () => {
   const plans = [
     {
       name: "Free",
-      price: "$0",
+      price: "INR 0",
       period: "/month",
       limits: "7 uses per day",
       features: [
@@ -22,7 +22,7 @@ const Pricing = () => {
     },
     {
       name: "Pro",
-      price: "$4.99",
+      price: "INR 499",
       period: "/month",
       limits: "1,000 uses per month",
       features: [
@@ -36,9 +36,9 @@ const Pricing = () => {
     },
     {
       name: "Unlimited",
-      price: "$19.99",
+      price: "INR 1799",
       period: "/month",
-      yearlyPrice: "$199.99/year",
+      yearlyPrice: "INR 17999/year",
       limits: "Unlimited usage",
       features: [
         "All Pro features",
