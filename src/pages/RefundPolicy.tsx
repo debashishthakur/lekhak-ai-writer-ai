@@ -16,13 +16,6 @@ const RefundPolicy = () => {
               Last updated: {new Date().toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}
             </p>
 
-            <div className="bg-green-50 dark:bg-green-900/20 p-6 rounded-lg border border-green-200 dark:border-green-800 mb-8">
-              <h3 className="font-semibold mb-2">30-Day Money-Back Guarantee</h3>
-              <p>
-                We offer a 30-day money-back guarantee for all paid subscriptions. If you're not satisfied with our Service for any reason, you can request a full refund within 30 days of purchase.
-              </p>
-            </div>
-
             <h2 className="text-2xl font-semibold mt-8 mb-4">1. Refund Eligibility</h2>
             <h3 className="text-xl font-medium mt-6 mb-3">1.1 Eligible for Full Refund</h3>
             <ul className="list-disc pl-6 mb-4">
@@ -32,15 +25,6 @@ const RefundPolicy = () => {
               <li><strong>Technical Issues:</strong> Service downtime or functionality problems</li>
               <li><strong>Billing Errors:</strong> Incorrect charges or duplicate payments</li>
             </ul>
-
-            <h3 className="text-xl font-medium mt-6 mb-3">1.2 Non-Refundable Items</h3>
-            <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg border border-yellow-200 dark:border-yellow-800">
-              <ul className="list-disc pl-6 mb-0">
-                <li><strong>Free Plan Usage:</strong> No payment involved</li>
-                <li><strong>Used Services:</strong> Refunds are available regardless of usage within the 30-day period</li>
-                <li><strong>Third-Party Fees:</strong> Payment gateway fees may not be refundable</li>
-              </ul>
-            </div>
 
             <h2 className="text-2xl font-semibold mt-8 mb-4">2. Refund Timeframes</h2>
             <h3 className="text-xl font-medium mt-6 mb-3">2.1 Request Period</h3>
@@ -61,11 +45,9 @@ const RefundPolicy = () => {
             <h2 className="text-2xl font-semibold mt-8 mb-4">3. How to Request a Refund</h2>
             <h3 className="text-xl font-medium mt-6 mb-3">3.1 Request Methods</h3>
             <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
-              <p className="font-medium mb-2">Contact our support team through any of these methods:</p>
+              <p className="font-medium mb-2">Contact our support team through:</p>
               <ul className="list-disc pl-6 mb-0">
-                <li><strong>Email:</strong> refunds@lekhakai.com</li>
-                <li><strong>Support Email:</strong> support@lekhakai.com</li>
-                <li><strong>Website Contact Form:</strong> www.lekhakai.com/contact</li>
+                <li><strong>Website Contact Details:</strong> https://www.lekhakai.com/about</li>
               </ul>
             </div>
 
@@ -179,13 +161,6 @@ const RefundPolicy = () => {
               <li><strong>Wallet Refunds:</strong> 1-2 business days to PhonePe wallet</li>
             </ul>
 
-            <h3 className="text-xl font-medium mt-6 mb-3">6.2 Transaction Fees</h3>
-            <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg border border-yellow-200 dark:border-yellow-800">
-              <p>
-                <strong>Note:</strong> While we absorb most transaction costs, in some cases, payment gateway fees (typically 1.99%) may be deducted from refunds. We'll clearly communicate any such deductions before processing.
-              </p>
-            </div>
-
             <h2 className="text-2xl font-semibold mt-8 mb-4">7. Refund Alternatives</h2>
             <h3 className="text-xl font-medium mt-6 mb-3">7.1 Service Credits</h3>
             <ul className="list-disc pl-6 mb-4">
@@ -245,9 +220,9 @@ const RefundPolicy = () => {
             </ul>
 
             <div className="border-t border-border pt-6 mt-8">
-              <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 p-6 rounded-lg border border-green-200 dark:border-green-800">
-                <h3 className="font-semibold mb-2">Our Commitment</h3>
-                <p className="text-sm">
+              <div className="bg-muted/50 p-6 rounded-lg border border-border">
+                <h3 className="font-semibold mb-2 text-foreground">Our Commitment</h3>
+                <p className="text-sm text-foreground">
                   We stand behind our Service and want you to be completely satisfied. If you're not happy with Lekhak AI for any reason, we'll work with you to make it right, whether that's through technical support, service credits, or a full refund.
                   If approved,Refund will be credited within 3-14 days to the original payment method. Cancellations should be done within 10 days.
                 </p>
