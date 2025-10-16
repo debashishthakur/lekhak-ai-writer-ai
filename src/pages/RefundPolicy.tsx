@@ -44,9 +44,9 @@ const RefundPolicy = () => {
 
             <h2 className="text-2xl font-semibold mt-8 mb-4">3. How to Request a Refund</h2>
             <h3 className="text-xl font-medium mt-6 mb-3">3.1 Request Methods</h3>
-            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
-              <p className="font-medium mb-2">Contact our support team through:</p>
-              <ul className="list-disc pl-6 mb-0">
+            <div className="bg-muted/50 p-4 rounded-lg border border-border">
+              <p className="font-medium mb-2 text-foreground">Contact our support team through:</p>
+              <ul className="list-disc pl-6 mb-0 text-foreground">
                 <li><strong>Website Contact Details:</strong> https://www.lekhakai.com/about</li>
               </ul>
             </div>
