@@ -189,7 +189,7 @@ const Terms = () => {
             <div className="bg-muted p-4 rounded-lg mt-4">
               <p><strong>Email:</strong> legal@lekhakai.com</p>
               <p><strong>Website:</strong> www.lekhakai.com</p>
-              <p><strong>Business Address:</strong> [Your Business Address]</p>
+              <p><strong>Contact Person:</strong> Mr. Debashish Thakur</p>
             </div>
 
             <div className="border-t border-border pt-6 mt-8">
