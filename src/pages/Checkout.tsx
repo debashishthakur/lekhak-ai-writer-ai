@@ -99,7 +99,7 @@ const Checkout = () => {
   const handlePaymentSuccess = (transactionId: string) => {
     toast.success('Payment successful!');
     
-    // Store successful payment info
+    // Store successful payment info (only when webhook confirms success)
     localStorage.setItem('last_payment', JSON.stringify({
       transactionId,
       plan: currentPlan.name,

@@ -4,6 +4,7 @@ import time
 import requests
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
+from supabase import create_client, Client
 
 class handler(BaseHTTPRequestHandler):
     def do_POST(self):
@@ -50,7 +51,7 @@ class handler(BaseHTTPRequestHandler):
                 "paymentFlow": {
                     "type": "PG_CHECKOUT",
                     "merchantUrls": {
-                        "redirectUrl": os.getenv('SUCCESS_URL', 'https://www.lekhakai.com/payment/success')
+                        "redirectUrl": f"https://www.lekhakai.com/payment/verify?merchantOrderId={merchant_order_id}&plan={plan_name}"
                     }
                 },
                 "expireAfter": 1800,  # 30 minutes
@@ -81,6 +82,18 @@ class handler(BaseHTTPRequestHandler):
                 
                 # Check if we got a redirect URL (successful payment creation)
                 if payment_data.get("redirectUrl") and payment_data.get("orderId"):
+                    # Store payment order in database
+                    store_payment_order(
+                        merchant_order_id=merchant_order_id,
+                        phonepe_order_id=payment_data.get("orderId"),
+                        user_id=user_id,
+                        plan_id=plan_id,
+                        plan_name=plan_name,
+                        amount=amount_paisa,
+                        status="PENDING",
+                        phonepe_response=payment_data
+                    )
+                    
                     result = {
                         "success": True,
                         "merchant_order_id": merchant_order_id,
@@ -165,4 +178,33 @@ def get_access_token():
             
     except Exception as e:
         print(f"OAuth error: {e}")
+        return None
+
+def get_supabase_client():
+    """Get Supabase client"""
+    url = os.getenv('SUPABASE_URL')
+    key = os.getenv('SUPABASE_SERVICE_ROLE_KEY')
+    return create_client(url, key)
+
+def store_payment_order(merchant_order_id: str, phonepe_order_id: str, user_id: str, 
+                       plan_id: str, plan_name: str, amount: int, status: str, phonepe_response: dict):
+    """Store payment order in Supabase database"""
+    try:
+        supabase = get_supabase_client()
+        
+        payment_data = {
+            "merchant_order_id": merchant_order_id,
+            "phonepe_order_id": phonepe_order_id,
+            "user_id": user_id,
+            "amount_paisa": amount,
+            "state": status,
+            "payment_details": phonepe_response
+        }
+        
+        result = supabase.table('phonepe_transactions').insert(payment_data).execute()
+        print(f"Payment order stored in database: {merchant_order_id}")
+        return result
+        
+    except Exception as e:
+        print(f"Database error storing payment order: {e}")
         return None
