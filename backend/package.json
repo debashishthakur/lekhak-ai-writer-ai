@@ -1,0 +1,22 @@
+{
+  "name": "lekhak-ai-phonepe-backend",
+  "version": "1.0.0",
+  "description": "PhonePe payment gateway integration for Lekhak AI",
+  "scripts": {
+    "start": "python main.py",
+    "dev": "uvicorn main:app --reload --host 0.0.0.0 --port 8001"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/lekhak-ai-writer-ai"
+  },
+  "keywords": [
+    "phonepe",
+    "payment-gateway",
+    "fastapi",
+    "python",
+    "lekhak-ai"
+  ],
+  "author": "Debashish Thakur",
+  "license": "MIT"
+}

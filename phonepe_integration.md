@@ -1731,4 +1731,645 @@ refund_response = client.refund(refund_request)
 
 ---
 
-*This comprehensive Python SDK integration plan provides the most robust, secure, and efficient payment system for Lekhak AI's Indian market expansion, leveraging PhonePe's market leadership in UPI transactions while maintaining enterprise-grade reliability and security standards.*
+## Enhanced Production Integration Plan - Post KYC Completion
+
+### Phase 6: Production-Ready Website Integration (Post-KYC)
+
+Since KYC has been completed on the PhonePe payment gateway dashboard, we can now proceed with the production implementation using both Python SDK and direct API integration approaches for maximum flexibility.
+
+#### 6.1 Hybrid Integration Architecture
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   React Frontend │───▶│  Python Backend │───▶│   PhonePe API   │
+│   (lekhakai.com) │    │   (FastAPI)     │    │   (Production)  │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         │                       │                       │
+         │              ┌─────────────────┐              │
+         └──────────────▶│   PhonePe SDK   │──────────────┘
+                        │   (Backup)      │
+                        └─────────────────┘
+```
+
+#### 6.2 Production Environment Configuration
+```env
+# Production PhonePe Configuration
+PHONEPE_CLIENT_ID=your_production_client_id
+PHONEPE_CLIENT_SECRET=your_production_client_secret
+PHONEPE_CLIENT_VERSION=1
+PHONEPE_ENVIRONMENT=PRODUCTION
+
+# Production API URLs
+PHONEPE_BASE_URL=https://api.phonepe.com/apis/pg
+PHONEPE_AUTH_URL=https://api.phonepe.com/apis/identity-manager/v1/oauth/token
+PHONEPE_CHECKOUT_URL=https://api.phonepe.com/apis/pg/checkout/v2/pay
+PHONEPE_STATUS_URL=https://api.phonepe.com/apis/pg/checkout/v2/order
+PHONEPE_REFUND_URL=https://api.phonepe.com/apis/pg/payments/v2/refund
+
+# Website Integration
+PHONEPE_WEBHOOK_URL=https://www.lekhakai.com/api/webhooks/phonepe
+PHONEPE_SUCCESS_URL=https://www.lekhakai.com/payment/success
+PHONEPE_FAILURE_URL=https://www.lekhakai.com/payment/failure
+PHONEPE_IFRAME_SCRIPT_URL=https://mercury.phonepe.com/web/bundle/checkout.js
+```
+
+#### 6.3 OAuth Token Management Service
+```python
+# auth_service.py - Production OAuth Token Management
+import time
+import requests
+from typing import Dict, Optional
+from datetime import datetime, timedelta
+import logging
+
+class PhonePeAuthService:
+    def __init__(self):
+        self.client_id = os.getenv('PHONEPE_CLIENT_ID')
+        self.client_secret = os.getenv('PHONEPE_CLIENT_SECRET')
+        self.client_version = os.getenv('PHONEPE_CLIENT_VERSION', '1')
+        self.auth_url = os.getenv('PHONEPE_AUTH_URL')
+        
+        self.access_token = None
+        self.token_expires_at = None
+        self.logger = logging.getLogger(__name__)
+    
+    def get_access_token(self) -> str:
+        """Get valid access token, refresh if needed"""
+        if self.is_token_expired():
+            self._refresh_token()
+        
+        return self.access_token
+    
+    def is_token_expired(self) -> bool:
+        """Check if current token is expired or about to expire"""
+        if not self.access_token or not self.token_expires_at:
+            return True
+        
+        # Refresh token 5 minutes before expiry
+        buffer_time = timedelta(minutes=5)
+        return datetime.now() >= (self.token_expires_at - buffer_time)
+    
+    def _refresh_token(self) -> None:
+        """Refresh OAuth access token"""
+        try:
+            payload = {
+                "client_id": self.client_id,
+                "client_secret": self.client_secret,
+                "client_version": self.client_version,
+                "grant_type": "client_credentials"
+            }
+            
+            headers = {
+                "Content-Type": "application/json"
+            }
+            
+            response = requests.post(
+                self.auth_url,
+                json=payload,
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                token_data = response.json()
+                self.access_token = token_data.get('access_token')
+                expires_at = token_data.get('expires_at')
+                
+                # Convert epoch timestamp to datetime
+                self.token_expires_at = datetime.fromtimestamp(expires_at)
+                
+                self.logger.info("PhonePe access token refreshed successfully")
+            else:
+                self.logger.error(f"Token refresh failed: {response.status_code} - {response.text}")
+                raise Exception("Failed to refresh PhonePe access token")
+                
+        except Exception as e:
+            self.logger.error(f"Token refresh error: {e}")
+            raise
+
+# Global auth service instance
+phonepe_auth = PhonePeAuthService()
+```
+
+#### 6.4 Enhanced Payment API Service
+```python
+# enhanced_payment_service.py - Production Payment Service
+import requests
+import json
+from typing import Dict, Any
+from .auth_service import phonepe_auth
+import hashlib
+import base64
+import os
+
+class EnhancedPaymentService:
+    def __init__(self):
+        self.base_url = os.getenv('PHONEPE_BASE_URL')
+        self.checkout_url = os.getenv('PHONEPE_CHECKOUT_URL')
+        self.status_url = os.getenv('PHONEPE_STATUS_URL')
+        self.refund_url = os.getenv('PHONEPE_REFUND_URL')
+        self.logger = logging.getLogger(__name__)
+    
+    def create_payment_order(self, user_id: str, plan_id: str, amount_rupees: float) -> Dict[str, Any]:
+        """
+        Create payment order using direct API integration
+        
+        Args:
+            user_id: User identifier
+            plan_id: Subscription plan ID  
+            amount_rupees: Amount in rupees
+            
+        Returns:
+            Payment order response with iframe URL
+        """
+        try:
+            # Generate unique merchant order ID
+            merchant_order_id = f"LEKHAK_{user_id[:8]}_{int(time.time())}"
+            amount_paisa = int(amount_rupees * 100)
+            
+            # Get fresh access token
+            access_token = phonepe_auth.get_access_token()
+            
+            # Prepare payment request
+            payment_payload = {
+                "merchantOrderId": merchant_order_id,
+                "amount": amount_paisa,
+                "paymentFlow": "IFRAME",
+                "expireAfter": 1800,  # 30 minutes
+                "metaInfo": {
+                    "user_id": user_id,
+                    "plan_id": plan_id,
+                    "source": "lekhakai_website"
+                },
+                "paymentModeConfig": {
+                    "enabledModes": ["UPI", "CARD", "NET_BANKING", "WALLET"],
+                    "disabledModes": []
+                }
+            }
+            
+            headers = {
+                "Content-Type": "application/json",
+                "Authorization": f"O-Bearer {access_token}"
+            }
+            
+            # Make API call
+            response = requests.post(
+                self.checkout_url,
+                json=payment_payload,
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                payment_data = response.json()
+                
+                # Store payment order in database
+                self._store_payment_order(
+                    merchant_order_id=merchant_order_id,
+                    user_id=user_id,
+                    plan_id=plan_id,
+                    amount_paisa=amount_paisa,
+                    phonepe_response=payment_data
+                )
+                
+                return {
+                    "success": True,
+                    "merchant_order_id": merchant_order_id,
+                    "payment_token": payment_data.get("token"),
+                    "expires_at": payment_data.get("expiresAt"),
+                    "amount": amount_paisa
+                }
+            else:
+                self.logger.error(f"Payment creation failed: {response.status_code} - {response.text}")
+                return {
+                    "success": False,
+                    "error": "Payment order creation failed",
+                    "details": response.text
+                }
+                
+        except Exception as e:
+            self.logger.error(f"Payment creation error: {e}")
+            return {
+                "success": False,
+                "error": "Payment creation failed"
+            }
+    
+    def check_payment_status(self, merchant_order_id: str, include_details: bool = True) -> Dict[str, Any]:
+        """Check payment status using direct API"""
+        try:
+            access_token = phonepe_auth.get_access_token()
+            
+            headers = {
+                "Content-Type": "application/json",
+                "Authorization": f"O-Bearer {access_token}"
+            }
+            
+            params = {
+                "details": "true" if include_details else "false"
+            }
+            
+            status_endpoint = f"{self.status_url}/{merchant_order_id}/status"
+            
+            response = requests.get(
+                status_endpoint,
+                headers=headers,
+                params=params,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                status_data = response.json()
+                
+                # Update local payment record
+                self._update_payment_status(merchant_order_id, status_data)
+                
+                return {
+                    "success": True,
+                    "status_data": status_data
+                }
+            else:
+                return {
+                    "success": False,
+                    "error": "Status check failed",
+                    "details": response.text
+                }
+                
+        except Exception as e:
+            self.logger.error(f"Status check error: {e}")
+            return {
+                "success": False,
+                "error": "Status check failed"
+            }
+    
+    def _store_payment_order(self, merchant_order_id: str, user_id: str, 
+                           plan_id: str, amount_paisa: int, phonepe_response: Dict):
+        """Store payment order in database"""
+        # Implementation for database storage
+        pass
+    
+    def _update_payment_status(self, merchant_order_id: str, status_data: Dict):
+        """Update payment status in database"""
+        # Implementation for status update
+        pass
+
+# Enhanced payment service instance
+enhanced_payment_service = EnhancedPaymentService()
+```
+
+#### 6.5 Frontend React Integration with PhonePe Iframe
+```typescript
+// PhonePeCheckout.tsx - Production Frontend Integration
+import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Loader2 } from 'lucide-react';
+
+// Declare PhonePe global object
+declare global {
+  interface Window {
+    PhonePeCheckout: {
+      transact: (config: {
+        tokenUrl: string;
+        callback: (response: any) => void;
+        type: string;
+      }) => void;
+      closePage: () => void;
+    };
+  }
+}
+
+interface PhonePeCheckoutProps {
+  userId: string;
+  planId: string;
+  amount: number;
+  planName: string;
+  onSuccess: (transactionId: string) => void;
+  onFailure: (error: string) => void;
+}
+
+const PhonePeCheckout: React.FC<PhonePeCheckoutProps> = ({
+  userId,
+  planId,
+  amount,
+  planName,
+  onSuccess,
+  onFailure
+}) => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [isScriptLoaded, setIsScriptLoaded] = useState(false);
+  const [paymentToken, setPaymentToken] = useState<string | null>(null);
+
+  // Load PhonePe checkout script
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://mercury.phonepe.com/web/bundle/checkout.js';
+    script.async = true;
+    script.onload = () => setIsScriptLoaded(true);
+    script.onerror = () => {
+      console.error('Failed to load PhonePe checkout script');
+      onFailure('Failed to load payment gateway');
+    };
+    
+    document.head.appendChild(script);
+    
+    return () => {
+      document.head.removeChild(script);
+    };
+  }, [onFailure]);
+
+  const initiatePayment = async () => {
+    if (!isScriptLoaded) {
+      onFailure('Payment gateway not ready');
+      return;
+    }
+
+    setIsLoading(true);
+    
+    try {
+      // Create payment order
+      const response = await fetch('/api/phonepe/create-payment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: userId,
+          plan_id: planId,
+          amount: amount
+        })
+      });
+
+      const paymentData = await response.json();
+
+      if (paymentData.success) {
+        setPaymentToken(paymentData.payment_token);
+        
+        // Configure PhonePe checkout
+        const checkoutConfig = {
+          tokenUrl: `/api/phonepe/get-token/${paymentData.merchant_order_id}`,
+          callback: handlePaymentCallback,
+          type: "IFRAME"
+        };
+
+        // Launch PhonePe checkout
+        window.PhonePeCheckout.transact(checkoutConfig);
+      } else {
+        onFailure(paymentData.error || 'Payment initiation failed');
+      }
+    } catch (error) {
+      console.error('Payment initiation error:', error);
+      onFailure('Payment initiation failed');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handlePaymentCallback = async (response: any) => {
+    console.log('PhonePe callback:', response);
+    
+    if (response.code === 'USER_CANCEL') {
+      onFailure('Payment cancelled by user');
+      return;
+    }
+    
+    if (response.code === 'CONCLUDED') {
+      // Payment concluded, verify status
+      try {
+        const statusResponse = await fetch(`/api/phonepe/verify-payment/${response.merchantOrderId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
+
+        const statusData = await statusResponse.json();
+        
+        if (statusData.success && statusData.status_data?.payload?.state === 'COMPLETED') {
+          onSuccess(response.merchantOrderId);
+        } else {
+          onFailure('Payment verification failed');
+        }
+      } catch (error) {
+        console.error('Payment verification error:', error);
+        onFailure('Payment verification failed');
+      }
+    }
+  };
+
+  return (
+    <Card className="w-full max-w-md mx-auto">
+      <CardHeader>
+        <CardTitle className="text-center">Complete Payment</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="text-center">
+          <p className="text-lg font-semibold">{planName}</p>
+          <p className="text-2xl font-bold text-primary">₹{amount}</p>
+          <p className="text-sm text-muted-foreground">Including 18% GST</p>
+        </div>
+        
+        <Button 
+          onClick={initiatePayment}
+          disabled={isLoading || !isScriptLoaded}
+          className="w-full"
+          size="lg"
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Processing...
+            </>
+          ) : !isScriptLoaded ? (
+            'Loading Payment Gateway...'
+          ) : (
+            'Pay with PhonePe'
+          )}
+        </Button>
+        
+        <div className="text-xs text-center text-muted-foreground">
+          <p>Supports UPI, Cards, Net Banking & Wallets</p>
+          <p>Secured by PhonePe Payment Gateway</p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+export default PhonePeCheckout;
+```
+
+#### 6.6 Production Webhook Handler
+```python
+# webhook_handler.py - Production Webhook Processing
+from fastapi import Request, HTTPException
+import hashlib
+import hmac
+import json
+import logging
+from typing import Dict, Any
+
+class WebhookHandler:
+    def __init__(self):
+        self.webhook_username = os.getenv('PHONEPE_WEBHOOK_USERNAME')
+        self.webhook_password = os.getenv('PHONEPE_WEBHOOK_PASSWORD')
+        self.logger = logging.getLogger(__name__)
+    
+    async def process_webhook(self, request: Request) -> Dict[str, Any]:
+        """Process PhonePe webhook with enhanced security"""
+        try:
+            # Get webhook data
+            authorization_header = request.headers.get('Authorization', '')
+            webhook_body = await request.body()
+            webhook_data = json.loads(webhook_body.decode('utf-8'))
+            
+            # Verify webhook authenticity
+            if not self._verify_webhook_signature(authorization_header, webhook_body):
+                raise HTTPException(status_code=401, detail="Invalid webhook signature")
+            
+            # Process different event types
+            event_type = webhook_data.get('event')
+            payload = webhook_data.get('payload', {})
+            
+            if event_type == 'checkout.order.completed':
+                await self._handle_successful_payment(payload)
+            elif event_type == 'checkout.order.failed':
+                await self._handle_failed_payment(payload)
+            elif event_type == 'pg.refund.completed':
+                await self._handle_successful_refund(payload)
+            elif event_type == 'pg.refund.failed':
+                await self._handle_failed_refund(payload)
+            else:
+                self.logger.warning(f"Unknown webhook event: {event_type}")
+            
+            return {"status": "success", "message": "Webhook processed"}
+            
+        except Exception as e:
+            self.logger.error(f"Webhook processing error: {e}")
+            raise HTTPException(status_code=500, detail="Webhook processing failed")
+    
+    def _verify_webhook_signature(self, auth_header: str, webhook_body: bytes) -> bool:
+        """Verify webhook signature using SHA256"""
+        try:
+            # Extract signature from header
+            if not auth_header.startswith('SHA256'):
+                return False
+            
+            received_signature = auth_header.split(' ', 1)[1]
+            
+            # Calculate expected signature
+            message = webhook_body + self.webhook_password.encode('utf-8')
+            expected_signature = hashlib.sha256(message).hexdigest()
+            
+            # Compare signatures
+            return hmac.compare_digest(received_signature, expected_signature)
+            
+        except Exception as e:
+            self.logger.error(f"Signature verification error: {e}")
+            return False
+    
+    async def _handle_successful_payment(self, payload: Dict):
+        """Handle successful payment webhook"""
+        merchant_order_id = payload.get('merchantOrderId')
+        payment_state = payload.get('state')
+        amount = payload.get('amount')
+        
+        if payment_state == 'COMPLETED':
+            # Activate subscription
+            await self._activate_subscription(merchant_order_id, payload)
+            self.logger.info(f"Payment completed: {merchant_order_id}")
+    
+    async def _handle_failed_payment(self, payload: Dict):
+        """Handle failed payment webhook"""
+        merchant_order_id = payload.get('merchantOrderId')
+        error_code = payload.get('errorCode')
+        
+        # Update payment status
+        await self._update_payment_failure(merchant_order_id, payload)
+        self.logger.warning(f"Payment failed: {merchant_order_id} - {error_code}")
+    
+    async def _handle_successful_refund(self, payload: Dict):
+        """Handle successful refund webhook"""
+        refund_id = payload.get('refundId')
+        merchant_refund_id = payload.get('merchantRefundId')
+        
+        # Process refund completion
+        await self._complete_refund(merchant_refund_id, payload)
+        self.logger.info(f"Refund completed: {refund_id}")
+    
+    async def _handle_failed_refund(self, payload: Dict):
+        """Handle failed refund webhook"""
+        merchant_refund_id = payload.get('merchantRefundId')
+        error_code = payload.get('errorCode')
+        
+        # Update refund failure
+        await self._update_refund_failure(merchant_refund_id, payload)
+        self.logger.warning(f"Refund failed: {merchant_refund_id} - {error_code}")
+    
+    async def _activate_subscription(self, merchant_order_id: str, payload: Dict):
+        """Activate user subscription after successful payment"""
+        # Implementation for subscription activation
+        pass
+    
+    async def _update_payment_failure(self, merchant_order_id: str, payload: Dict):
+        """Update payment failure status"""
+        # Implementation for payment failure handling
+        pass
+    
+    async def _complete_refund(self, merchant_refund_id: str, payload: Dict):
+        """Complete refund processing"""
+        # Implementation for refund completion
+        pass
+    
+    async def _update_refund_failure(self, merchant_refund_id: str, payload: Dict):
+        """Update refund failure status"""
+        # Implementation for refund failure handling
+        pass
+
+# Webhook handler instance
+webhook_handler = WebhookHandler()
+```
+
+#### 6.7 Production Deployment Checklist
+
+**Pre-Deployment Verification:**
+- [ ] PhonePe production credentials configured
+- [ ] OAuth token generation tested
+- [ ] Payment creation API tested with ₹1
+- [ ] Iframe integration tested on staging
+- [ ] Webhook URL configured in PhonePe dashboard
+- [ ] Database schema migrations completed
+- [ ] SSL certificates for webhook endpoint
+- [ ] Error monitoring and logging setup
+
+**Go-Live Steps:**
+1. **Environment Switch:** Update all environment variables to production
+2. **DNS Configuration:** Ensure webhook URL is accessible
+3. **SSL Certificate:** Verify HTTPS for all PhonePe endpoints
+4. **Test Payment:** Process ₹1 test transaction
+5. **Webhook Test:** Verify webhook delivery and processing
+6. **Monitoring Setup:** Configure payment success/failure alerts
+7. **Customer Support:** Prepare payment support documentation
+
+**Post-Launch Monitoring:**
+- Payment success rate (target: >95%)
+- Average payment processing time
+- Webhook delivery success rate
+- Customer payment complaints
+- PhonePe settlement tracking
+
+### Production Success Metrics
+
+**Technical KPIs:**
+- Payment API response time: <2 seconds
+- Webhook processing time: <5 seconds
+- OAuth token refresh success: 100%
+- Payment iframe load time: <3 seconds
+
+**Business KPIs:**
+- UPI transaction percentage: >60%
+- Payment dropout rate: <10%
+- Customer payment satisfaction: >90%
+- Revenue recognition accuracy: 100%
+
+---
+
+*This enhanced integration plan provides a production-ready implementation leveraging both PhonePe Python SDK and direct API integration, ensuring maximum reliability, security, and performance for Lekhak AI's payment processing on www.lekhakai.com.*

@@ -1,4 +1,11 @@
 {
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/**/*.py",
+      "use": "@vercel/python"
+    }
+  ],
   "rewrites": [
     {
       "source": "/((?!api/.*).*)",
@@ -16,6 +23,12 @@
       "maxDuration": 10
     },
     "api/users/identify.js": {
+      "maxDuration": 30
+    },
+    "api/phonepe/*.py": {
+      "maxDuration": 30
+    },
+    "api/webhooks/*.py": {
       "maxDuration": 30
     }
   }

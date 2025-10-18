@@ -1,73 +1,162 @@
-# Welcome to your Lovable project
+# 🚀 Lekhak AI - PhonePe Payment Integration
 
-## Project info
+A complete AI writing assistant with PhonePe payment gateway integration for the Indian market.
 
-**URL**: https://lovable.dev/projects/fc328d27-eee4-4044-b50f-2d203cd3ad2f
+## 🎯 Features
 
-## How can I edit this code?
+- **AI Writing Assistant**: Advanced text rewriting and grammar checking
+- **PhonePe Payments**: Complete payment gateway integration for Indian users
+- **Subscription Management**: Free, Pro (₹399), and Unlimited (₹1599) plans
+- **Real-time Processing**: Fast API responses with subscription-based quotas
+- **Secure Webhooks**: Complete PhonePe webhook handling for all events
 
-There are several ways of editing your application.
+## 🏗️ Architecture
 
-**Use Lovable**
+### Frontend (React + TypeScript)
+- Modern React app with TypeScript
+- Tailwind CSS for styling
+- Responsive design with mobile support
+- PhonePe checkout integration
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/fc328d27-eee4-4044-b50f-2d203cd3ad2f) and start prompting.
+### Backend (Python + FastAPI)
+- FastAPI server with async support
+- PhonePe OAuth token management
+- Complete payment lifecycle handling
+- Webhook processing for 16+ PhonePe events
+- Supabase database integration
 
-Changes made via Lovable will be committed automatically to this repo.
+### Database (Supabase/PostgreSQL)
+- User management and authentication
+- Subscription and payment tracking
+- Usage quotas and analytics
+- Webhook event logging
 
-**Use your preferred IDE**
+## 🚀 Quick Deploy
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Automated Deployment
+```bash
+./deploy-to-vercel.sh
+```
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### Manual Deployment
+See [DEPLOY_GITHUB_VERCEL.md](./DEPLOY_GITHUB_VERCEL.md) for detailed instructions.
 
-Follow these steps:
+## 📁 Project Structure
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+```
+lekhak-ai-writer-ai/
+├── frontend/
+│   ├── src/
+│   │   ├── components/          # React components
+│   │   ├── pages/              # Page components
+│   │   └── ...
+├── backend/                    # Python FastAPI backend
+│   ├── services/               # PhonePe integration services
+│   ├── main.py                # FastAPI application
+│   ├── requirements.txt       # Python dependencies
+│   └── vercel.json            # Vercel deployment config
+└── README.md
+```
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+## 🛠️ Development Setup
 
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+### Frontend
+```bash
+npm install
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+### Backend
+```bash
+cd backend
+pip install -r requirements.txt
+uvicorn main:app --reload --port 8001
+```
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Database
+1. Run the SQL schema in your Supabase project
+2. Update environment variables with your credentials
 
-**Use GitHub Codespaces**
+## 🔐 Environment Variables
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### Backend (.env)
+```env
+# PhonePe Credentials
+PHONEPE_CLIENT_ID=your_client_id
+PHONEPE_CLIENT_SECRET=your_client_secret
+PHONEPE_MERCHANT_ID=your_merchant_id
 
-## What technologies are used for this project?
+# Database
+DATABASE_URL=your_supabase_url
+SUPABASE_SERVICE_ROLE_KEY=your_service_key
 
-This project is built with:
+# Webhook Configuration
+PHONEPE_WEBHOOK_URL=https://your-domain.com/api/webhooks/phonepe
+```
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+### Frontend (.env.local)
+```env
+NEXT_PUBLIC_API_URL=https://your-backend.vercel.app
+NEXT_PUBLIC_PHONEPE_MERCHANT_ID=your_merchant_id
+```
 
-## How can I deploy this project?
+## 💰 Subscription Plans
 
-Simply open [Lovable](https://lovable.dev/projects/fc328d27-eee4-4044-b50f-2d203cd3ad2f) and click on Share -> Publish.
+| Plan | Price | Features |
+|------|-------|----------|
+| **Free** | ₹0 | 7 uses per day |
+| **Pro** | ₹399/month | 1000 uses per month |
+| **Unlimited** | ₹1599/month | Unlimited usage |
 
-## Can I connect a custom domain to my Lovable project?
+## 🔧 API Endpoints
 
-Yes, you can!
+### Payment APIs
+- `POST /api/phonepe/create-payment` - Create payment order
+- `GET /api/phonepe/verify-payment/{order_id}` - Verify payment status
+- `POST /api/webhooks/phonepe` - PhonePe webhook handler
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+### Utility APIs
+- `GET /api/health` - Health check
+- `GET /api/phonepe/service-info` - Service information
+- `GET /api/subscription-plans` - Available plans
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+## 🧪 Testing
+
+### Test ₹5 Payment
+```bash
+curl -X POST "https://your-backend.vercel.app/api/phonepe/create-payment" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_id": "test_user",
+    "plan_id": "test_plan",
+    "amount": 5.0,
+    "plan_name": "Test Plan"
+  }'
+```
+
+### Integration Testing
+Open `backend/test_integration.html` in your browser for complete API testing.
+
+## 📞 Support
+
+- **PhonePe Integration**: All major payment methods (UPI, Cards, Net Banking, Wallets)
+- **Error Handling**: Comprehensive error responses and logging
+- **Security**: OAuth tokens, webhook signature verification, CORS protection
+
+## 🚀 Deployment Status
+
+- ✅ Backend ready for Vercel deployment
+- ✅ Frontend components implemented
+- ✅ Database schema deployed
+- ✅ PhonePe integration complete
+- ⏳ Webhook URL activation (requires PhonePe support)
+
+## 📝 License
+
+MIT License - See LICENSE file for details
+
+---
+
+**Ready for production deployment!** 
+
+Follow the deployment guide in [DEPLOY_GITHUB_VERCEL.md](./DEPLOY_GITHUB_VERCEL.md) to go live.

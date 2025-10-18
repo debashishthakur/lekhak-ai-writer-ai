@@ -116,8 +116,15 @@ const Pricing = () => {
                   className="w-full" 
                   variant={plan.popular ? "default" : "outline"}
                   size="lg"
+                  onClick={() => {
+                    if (plan.name === 'Free') {
+                      navigate('/');
+                    } else {
+                      navigate(`/checkout?plan=${plan.name.toLowerCase()}&amount=${plan.price.replace('₹', '').replace(',', '')}`);
+                    }
+                  }}
                 >
-                  Upgrade
+                  {plan.name === 'Free' ? 'Get Started' : 'Upgrade Now'}
                 </Button>
               </CardFooter>
             </Card>
