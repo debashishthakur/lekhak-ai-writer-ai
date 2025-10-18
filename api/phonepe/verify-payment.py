@@ -1,30 +1,36 @@
 import os
-import logging
+import json
 import requests
-from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import JSONResponse
-from dotenv import load_dotenv
 
-# Load environment variables
-load_dotenv()
-
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-app = FastAPI()
-
-@app.get("/{merchant_order_id}")
-async def verify_payment(merchant_order_id: str):
+def handler(request):
     """Verify payment status with PhonePe"""
     try:
-        logger.info(f"Verifying payment: {merchant_order_id}")
+        # Get merchant order ID from path
+        path = request.get('path', '')
+        # Extract order ID from path like /api/phonepe/verify-payment/LEKHAK_xxx
+        path_parts = path.split('/')
+        if len(path_parts) < 2:
+            return {
+                'statusCode': 400,
+                'body': json.dumps({'error': 'Missing merchant order ID in path'})
+            }
+        
+        merchant_order_id = path_parts[-1]
+        
+        if not merchant_order_id:
+            return {
+                'statusCode': 400,
+                'body': json.dumps({'error': 'Merchant order ID is required'})
+            }
         
         # Get OAuth token
-        access_token = await get_access_token()
+        access_token = get_access_token()
         
         if not access_token:
-            raise HTTPException(status_code=500, detail="Failed to get PhonePe access token")
+            return {
+                'statusCode': 500,
+                'body': json.dumps({'error': 'Failed to get PhonePe access token'})
+            }
         
         headers = {
             "Content-Type": "application/json",
@@ -47,28 +53,40 @@ async def verify_payment(merchant_order_id: str):
         if response.status_code == 200:
             status_data = response.json()
             
-            # Update local payment record
-            await update_payment_status(merchant_order_id, status_data)
-            
-            logger.info(f"Payment verification successful: {merchant_order_id}")
-            return {
+            result = {
                 "success": True,
                 "status_data": status_data,
                 "merchant_order_id": merchant_order_id
             }
-        else:
-            logger.error(f"Payment verification failed: {response.status_code} - {response.text}")
+            
             return {
-                "success": False,
-                "error": "Payment verification failed",
-                "details": response.text
+                'statusCode': 200,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'body': json.dumps(result)
+            }
+        else:
+            return {
+                'statusCode': 400,
+                'body': json.dumps({
+                    'success': False,
+                    'error': 'Payment verification failed',
+                    'details': response.text
+                })
             }
             
     except Exception as e:
-        logger.error(f"Payment verification error: {e}")
-        raise HTTPException(status_code=500, detail="Payment verification failed")
+        return {
+            'statusCode': 500,
+            'body': json.dumps({
+                'success': False,
+                'error': f'Payment verification failed: {str(e)}'
+            })
+        }
 
-async def get_access_token():
+def get_access_token():
     """Get OAuth access token from PhonePe"""
     try:
         auth_url = os.getenv('PHONEPE_AUTH_URL')
@@ -85,18 +103,7 @@ async def get_access_token():
             token_data = response.json()
             return token_data.get('access_token')
         else:
-            logger.error(f"Token request failed: {response.status_code}")
             return None
             
     except Exception as e:
-        logger.error(f"Token request error: {e}")
         return None
-
-async def update_payment_status(merchant_order_id: str, status_data: dict):
-    """Update payment status in database"""
-    # TODO: Implement Supabase update
-    logger.info(f"Updating payment status: {merchant_order_id}")
-    pass
-
-# Export the FastAPI app for Vercel
-handler = app
