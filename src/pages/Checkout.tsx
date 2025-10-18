@@ -19,6 +19,16 @@ const Checkout = () => {
 
   // Plan configurations
   const planConfigs = {
+    test: {
+      id: 'test_plan',
+      name: 'Test',
+      amount: 1,
+      features: [
+        'Test payment flow',
+        '1 rupee test transaction',
+        'Development testing'
+      ]
+    },
     trial: {
       id: 'trial_plan',
       name: 'Trial',
@@ -180,7 +190,13 @@ const Checkout = () => {
                 <CardTitle className="text-lg">Why Choose {currentPlan.name}?</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2 text-sm text-muted-foreground">
-                {currentPlan.name === 'Trial' ? (
+                {currentPlan.name === 'Test' ? (
+                  <>
+                    <p>Test the complete payment flow with a minimal amount.</p>
+                    <p>Perfect for developers and testing the PhonePe integration.</p>
+                    <p>Complete end-to-end payment testing for ₹1 only.</p>
+                  </>
+                ) : currentPlan.name === 'Trial' ? (
                   <>
                     <p>Perfect for getting started with AI writing assistance at an affordable price.</p>
                     <p>Try our essential features with daily usage limits to test the value.</p>

@@ -41,10 +41,20 @@ const PaymentVerification = () => {
       const result = await response.json();
       setVerificationResult(result);
 
-      // Check the actual PhonePe response structure
-      const phonepeState = result.status_data?.payload?.state || result.status_data?.state;
+      // Log the actual response for debugging
+      console.log('Payment verification result:', result);
+      console.log('Status data structure:', result.status_data);
+
+      // Check multiple possible paths for PhonePe state
+      const phonepeState = 
+        result.status_data?.payload?.state || 
+        result.status_data?.state || 
+        result.status_data?.data?.state ||
+        (result.status_data?.success === true ? 'COMPLETED' : undefined);
       
-      if (result.success && phonepeState === 'COMPLETED') {
+      console.log('Detected PhonePe state:', phonepeState);
+      
+      if (result.success && (phonepeState === 'COMPLETED' || phonepeState === 'SUCCESS')) {
         // Payment successful - store in localStorage and redirect
         const paymentInfo = {
           transactionId: merchantOrderId,
@@ -62,12 +72,15 @@ const PaymentVerification = () => {
         
       } else if (phonepeState === 'FAILED') {
         // Payment failed
+        console.log('Payment failed, redirecting to failure page');
         setTimeout(() => {
           navigate(`/payment/failure?error=Payment failed&order=${merchantOrderId}`);
         }, 2000);
         
       } else {
         // Payment pending or unknown status
+        console.log('Payment verification failed or unknown status, redirecting to failure page');
+        console.log('Full result for debugging:', JSON.stringify(result, null, 2));
         setTimeout(() => {
           navigate(`/payment/failure?error=Payment verification failed&order=${merchantOrderId}`);
         }, 2000);
@@ -90,9 +103,13 @@ const PaymentVerification = () => {
       return <Loader2 className="h-16 w-16 text-primary animate-spin" />;
     }
     
-    const phonepeState = verificationResult?.status_data?.payload?.state || verificationResult?.status_data?.state;
+    const phonepeState = 
+      verificationResult?.status_data?.payload?.state || 
+      verificationResult?.status_data?.state || 
+      verificationResult?.status_data?.data?.state ||
+      (verificationResult?.status_data?.success === true ? 'COMPLETED' : undefined);
     
-    if (verificationResult?.success && phonepeState === 'COMPLETED') {
+    if (verificationResult?.success && (phonepeState === 'COMPLETED' || phonepeState === 'SUCCESS')) {
       return <CheckCircle className="h-16 w-16 text-green-500" />;
     }
     
@@ -104,9 +121,13 @@ const PaymentVerification = () => {
       return 'Verifying your payment...';
     }
     
-    const phonepeState = verificationResult?.status_data?.payload?.state || verificationResult?.status_data?.state;
+    const phonepeState = 
+      verificationResult?.status_data?.payload?.state || 
+      verificationResult?.status_data?.state || 
+      verificationResult?.status_data?.data?.state ||
+      (verificationResult?.status_data?.success === true ? 'COMPLETED' : undefined);
     
-    if (verificationResult?.success && phonepeState === 'COMPLETED') {
+    if (verificationResult?.success && (phonepeState === 'COMPLETED' || phonepeState === 'SUCCESS')) {
       return 'Payment successful! Redirecting...';
     }
     

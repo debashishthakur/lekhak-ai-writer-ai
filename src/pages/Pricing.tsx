@@ -10,6 +10,17 @@ const Pricing = () => {
 
   const plans = [
     {
+      name: "Test",
+      price: "₹1",
+      period: "/test",
+      limits: "For testing only",
+      features: [
+        "Test payment flow",
+        "1 rupee test transaction",
+        "Development testing"
+      ]
+    },
+    {
       name: "Trial",
       price: "₹59",
       period: "/month",

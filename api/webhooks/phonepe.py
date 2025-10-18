@@ -193,7 +193,10 @@ def activate_user_subscription(merchant_order_id: str, webhook_payload: dict):
             amount_paisa = payment['amount_paisa']
             
             # Determine plan based on amount
-            if amount_paisa == 5900:  # ₹59
+            if amount_paisa == 100:  # ₹1
+                plan_name = 'Test'
+                plan_id_query = supabase.table('subscription_plans').select('id').eq('name', 'Free').single().execute()
+            elif amount_paisa == 5900:  # ₹59
                 plan_name = 'Trial'
                 plan_id_query = supabase.table('subscription_plans').select('id').eq('name', 'Free').single().execute()
             elif amount_paisa == 39900:  # ₹399

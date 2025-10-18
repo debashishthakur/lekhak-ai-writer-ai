@@ -50,10 +50,14 @@ class handler(BaseHTTPRequestHandler):
             if response.status_code == 200:
                 status_data = response.json()
                 
+                # Log the actual response for debugging
+                print(f"PhonePe status response for {merchant_order_id}: {status_data}")
+                
                 result = {
                     "success": True,
                     "status_data": status_data,
-                    "merchant_order_id": merchant_order_id
+                    "merchant_order_id": merchant_order_id,
+                    "raw_response": status_data  # Include raw response for debugging
                 }
                 
                 self.send_success_response(result)
