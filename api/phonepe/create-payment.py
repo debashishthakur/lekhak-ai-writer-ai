@@ -79,20 +79,23 @@ class handler(BaseHTTPRequestHandler):
             if response.status_code == 200:
                 payment_data = response.json()
                 
-                # PhonePe response structure: {success: true, code: "...", message: "...", data: {...}}
-                if payment_data.get("success") and payment_data.get("data"):
-                    data = payment_data["data"]
+                # Check if we got a redirect URL (successful payment creation)
+                if payment_data.get("redirectUrl") and payment_data.get("orderId"):
                     result = {
                         "success": True,
                         "merchant_order_id": merchant_order_id,
-                        "payment_url": data.get("instrumentResponse", {}).get("redirectInfo", {}).get("url"),
-                        "expires_at": data.get("expiresAt"),
+                        "phonepe_order_id": payment_data.get("orderId"),
+                        "payment_url": payment_data.get("redirectUrl"),
+                        "expires_at": payment_data.get("expireAt"),
+                        "state": payment_data.get("state"),
                         "amount": amount_paisa,
                         "phonepe_response": payment_data
                     }
                     
                     self.send_success_response(result)
                 else:
+                    # Log the actual response for debugging
+                    print(f"Unexpected PhonePe response: {payment_data}")
                     self.send_error_response(400, {
                         'success': False,
                         'error': payment_data.get("message", "Payment creation failed"),

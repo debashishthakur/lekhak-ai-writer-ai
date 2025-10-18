@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -41,8 +41,6 @@ const PhonePeCheckout: React.FC<PhonePeCheckoutProps> = ({
   onCancel
 }) => {
   const [isLoading, setIsLoading] = useState(false);
-  const [isScriptLoaded, setIsScriptLoaded] = useState(false);
-  const [paymentToken, setPaymentToken] = useState<string | null>(null);
   const [merchantOrderId, setMerchantOrderId] = useState<string | null>(null);
 
   // Calculate amounts
@@ -50,40 +48,9 @@ const PhonePeCheckout: React.FC<PhonePeCheckoutProps> = ({
   const gstAmount = baseAmount * 0.18;
   const totalAmount = baseAmount + gstAmount;
 
-  // Load PhonePe checkout script
-  useEffect(() => {
-    const script = document.createElement('script');
-    script.src = 'https://mercury.phonepe.com/web/bundle/checkout.js';
-    script.async = true;
-    script.onload = () => {
-      setIsScriptLoaded(true);
-      console.log('PhonePe script loaded successfully');
-    };
-    script.onerror = () => {
-      console.error('Failed to load PhonePe checkout script');
-      toast.error('Failed to load payment gateway');
-      onFailure('Failed to load payment gateway');
-    };
-    
-    document.head.appendChild(script);
-    
-    return () => {
-      // Cleanup script on unmount
-      try {
-        document.head.removeChild(script);
-      } catch (e) {
-        // Script might already be removed
-      }
-    };
-  }, [onFailure]);
+  // No script loading needed for direct redirect flow
 
   const initiatePayment = async () => {
-    if (!isScriptLoaded) {
-      toast.error('Payment gateway not ready');
-      onFailure('Payment gateway not ready');
-      return;
-    }
-
     setIsLoading(true);
     
     try {
@@ -106,20 +73,17 @@ const PhonePeCheckout: React.FC<PhonePeCheckoutProps> = ({
       const paymentData = await response.json();
 
       if (paymentData.success) {
-        setPaymentToken(paymentData.payment_token);
         setMerchantOrderId(paymentData.merchant_order_id);
         
         toast.success('Payment order created successfully');
         
-        // Configure PhonePe checkout
-        const checkoutConfig = {
-          tokenUrl: `/api/phonepe/get-token/${paymentData.merchant_order_id}`,
-          callback: handlePaymentCallback,
-          type: "IFRAME"
-        };
-
-        // Launch PhonePe checkout
-        window.PhonePeCheckout.transact(checkoutConfig);
+        // Redirect to PhonePe payment URL directly
+        if (paymentData.payment_url) {
+          window.location.href = paymentData.payment_url;
+        } else {
+          toast.error('No payment URL received');
+          onFailure('No payment URL received');
+        }
       } else {
         toast.error(paymentData.error || 'Payment initiation failed');
         onFailure(paymentData.error || 'Payment initiation failed');
@@ -133,46 +97,6 @@ const PhonePeCheckout: React.FC<PhonePeCheckoutProps> = ({
     }
   };
 
-  const handlePaymentCallback = async (response: any) => {
-    console.log('PhonePe callback received:', response);
-    
-    if (response.code === 'USER_CANCEL') {
-      toast.info('Payment cancelled by user');
-      onCancel?.();
-      return;
-    }
-    
-    if (response.code === 'CONCLUDED') {
-      // Payment concluded, verify status
-      toast.info('Verifying payment...');
-      
-      try {
-        const statusResponse = await fetch(`/api/phonepe/verify-payment/${response.merchantOrderId}`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          }
-        });
-
-        const statusData = await statusResponse.json();
-        
-        if (statusData.success && statusData.status_data?.payload?.state === 'COMPLETED') {
-          toast.success('Payment successful!');
-          onSuccess(response.merchantOrderId);
-        } else if (statusData.status_data?.payload?.state === 'FAILED') {
-          toast.error('Payment failed');
-          onFailure('Payment failed');
-        } else {
-          toast.error('Payment verification failed');
-          onFailure('Payment verification failed');
-        }
-      } catch (error) {
-        console.error('Payment verification error:', error);
-        toast.error('Payment verification failed');
-        onFailure('Payment verification failed');
-      }
-    }
-  };
 
   return (
     <div className="w-full max-w-lg mx-auto">
@@ -242,7 +166,7 @@ const PhonePeCheckout: React.FC<PhonePeCheckoutProps> = ({
           {/* Payment Button */}
           <Button 
             onClick={initiatePayment}
-            disabled={isLoading || !isScriptLoaded}
+            disabled={isLoading}
             className="w-full h-12 text-lg font-semibold"
             size="lg"
           >
@@ -251,8 +175,6 @@ const PhonePeCheckout: React.FC<PhonePeCheckoutProps> = ({
                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                 Processing...
               </>
-            ) : !isScriptLoaded ? (
-              'Loading Payment Gateway...'
             ) : (
               `Pay ₹${totalAmount.toFixed(2)} with PhonePe`
             )}
