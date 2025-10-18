@@ -10,8 +10,8 @@ const Pricing = () => {
 
   const plans = [
     {
-      name: "Free",
-      price: "₹0",
+      name: "Trial",
+      price: "₹59",
       period: "/month",
       limits: "7 uses per day",
       features: [
@@ -117,14 +117,10 @@ const Pricing = () => {
                   variant={plan.popular ? "default" : "outline"}
                   size="lg"
                   onClick={() => {
-                    if (plan.name === 'Free') {
-                      navigate('/');
-                    } else {
-                      navigate(`/checkout?plan=${plan.name.toLowerCase()}&amount=${plan.price.replace('₹', '').replace(',', '')}`);
-                    }
+                    navigate(`/checkout?plan=${plan.name.toLowerCase()}&amount=${plan.price.replace('₹', '').replace(',', '')}`);
                   }}
                 >
-                  {plan.name === 'Free' ? 'Get Started' : 'Upgrade Now'}
+                  Upgrade Now
                 </Button>
               </CardFooter>
             </Card>

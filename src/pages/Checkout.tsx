@@ -19,6 +19,17 @@ const Checkout = () => {
 
   // Plan configurations
   const planConfigs = {
+    trial: {
+      id: 'trial_plan',
+      name: 'Trial',
+      amount: 59,
+      features: [
+        '7 uses per day',
+        'Basic text rewriting',
+        'Daily reset at midnight UTC',
+        'Standard support'
+      ]
+    },
     pro: {
       id: 'pro_plan',
       name: 'Pro',
@@ -169,7 +180,13 @@ const Checkout = () => {
                 <CardTitle className="text-lg">Why Choose {currentPlan.name}?</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2 text-sm text-muted-foreground">
-                {currentPlan.name === 'Pro' ? (
+                {currentPlan.name === 'Trial' ? (
+                  <>
+                    <p>Perfect for getting started with AI writing assistance at an affordable price.</p>
+                    <p>Try our essential features with daily usage limits to test the value.</p>
+                    <p>Great for occasional users who want to experience AI-powered writing.</p>
+                  </>
+                ) : currentPlan.name === 'Pro' ? (
                   <>
                     <p>Perfect for professionals and content creators who need reliable AI writing assistance.</p>
                     <p>Get advanced features at an affordable price with excellent value for money.</p>
