@@ -43,21 +43,22 @@ class handler(BaseHTTPRequestHandler):
                 self.send_error_response(500, {'error': 'Failed to get PhonePe access token'})
                 return
             
-            # Prepare payment request
+            # Prepare payment request according to PhonePe documentation
             payment_payload = {
                 "merchantOrderId": merchant_order_id,
                 "amount": amount_paisa,
-                "paymentFlow": "IFRAME",
+                "paymentFlow": {
+                    "type": "PG_CHECKOUT",
+                    "merchantUrls": {
+                        "redirectUrl": os.getenv('SUCCESS_URL', 'https://www.lekhakai.com/payment/success')
+                    }
+                },
                 "expireAfter": 1800,  # 30 minutes
                 "metaInfo": {
                     "user_id": user_id,
                     "plan_id": plan_id,
                     "plan_name": plan_name,
                     "source": "lekhakai_website"
-                },
-                "paymentModeConfig": {
-                    "enabledModes": ["UPI", "CARD", "NET_BANKING", "WALLET"],
-                    "disabledModes": []
                 }
             }
             
@@ -66,8 +67,8 @@ class handler(BaseHTTPRequestHandler):
                 "Authorization": f"O-Bearer {access_token}"
             }
             
-            # Make API call to PhonePe
-            checkout_url = os.getenv('PHONEPE_CHECKOUT_URL')
+            # Make API call to PhonePe (use correct production URL)
+            checkout_url = "https://api.phonepe.com/apis/pg/checkout/v2/pay"
             response = requests.post(
                 checkout_url,
                 json=payment_payload,
@@ -78,16 +79,25 @@ class handler(BaseHTTPRequestHandler):
             if response.status_code == 200:
                 payment_data = response.json()
                 
-                result = {
-                    "success": True,
-                    "merchant_order_id": merchant_order_id,
-                    "payment_token": payment_data.get("token"),
-                    "expires_at": payment_data.get("expiresAt"),
-                    "amount": amount_paisa,
-                    "checkout_url": f"https://checkout.phonepe.com/v2/{payment_data.get('token')}"
-                }
-                
-                self.send_success_response(result)
+                # PhonePe response structure: {success: true, code: "...", message: "...", data: {...}}
+                if payment_data.get("success") and payment_data.get("data"):
+                    data = payment_data["data"]
+                    result = {
+                        "success": True,
+                        "merchant_order_id": merchant_order_id,
+                        "payment_url": data.get("instrumentResponse", {}).get("redirectInfo", {}).get("url"),
+                        "expires_at": data.get("expiresAt"),
+                        "amount": amount_paisa,
+                        "phonepe_response": payment_data
+                    }
+                    
+                    self.send_success_response(result)
+                else:
+                    self.send_error_response(400, {
+                        'success': False,
+                        'error': payment_data.get("message", "Payment creation failed"),
+                        'details': payment_data
+                    })
             else:
                 self.send_error_response(400, {
                     'success': False,
