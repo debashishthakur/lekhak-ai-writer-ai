@@ -12,7 +12,7 @@ A complete AI writing assistant with PhonePe payment gateway integration for the
 
 ## 🏗️ Architecture
 
-### Frontend (React + TypeScript)
+### Frontend  (React + TypeScript)
 - Modern React app with TypeScript
 - Tailwind CSS for styling
 - Responsive design with mobile support
