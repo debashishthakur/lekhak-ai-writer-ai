@@ -7,7 +7,6 @@ import { GoogleAuthProvider } from "@/contexts/GoogleAuthContext";
 import Index from "./pages/Index";
 import Pricing from "./pages/Pricing";
 import Checkout from "./pages/Checkout";
-import PaymentVerification from "./pages/PaymentVerification";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentFailure from "./pages/PaymentFailure";
 import Terms from "./pages/Terms";
@@ -30,7 +29,6 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/checkout" element={<Checkout />} />
-            <Route path="/payment/verify" element={<PaymentVerification />} />
             <Route path="/payment/success" element={<PaymentSuccess />} />
             <Route path="/payment/failure" element={<PaymentFailure />} />
             <Route path="/terms" element={<Terms />} />

@@ -51,7 +51,7 @@ class handler(BaseHTTPRequestHandler):
                 "paymentFlow": {
                     "type": "PG_CHECKOUT",
                     "merchantUrls": {
-                        "redirectUrl": f"https://www.lekhakai.com/payment/verify?merchantOrderId={merchant_order_id}&plan={plan_name}"
+                        "redirectUrl": f"https://www.lekhakai.com/payment/success?transaction={merchant_order_id}&plan={plan_name}"
                     }
                 },
                 "expireAfter": 1800,  # 30 minutes

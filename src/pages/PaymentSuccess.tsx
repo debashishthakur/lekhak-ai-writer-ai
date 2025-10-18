@@ -16,13 +16,23 @@ const PaymentSuccess = () => {
   const planName = searchParams.get('plan');
 
   useEffect(() => {
-    // In a real implementation, you'd verify the transaction with your backend
-    // For now, we'll get details from localStorage or URL params
-    const storedPayment = localStorage.getItem('last_payment');
-    if (storedPayment) {
-      setPaymentDetails(JSON.parse(storedPayment));
+    // Store successful payment info when user reaches success page
+    if (transactionId && planName) {
+      const paymentInfo = {
+        transactionId,
+        plan: planName,
+        timestamp: new Date().toISOString()
+      };
+      localStorage.setItem('last_payment', JSON.stringify(paymentInfo));
+      setPaymentDetails(paymentInfo);
+    } else {
+      // Fallback to stored payment if available
+      const storedPayment = localStorage.getItem('last_payment');
+      if (storedPayment) {
+        setPaymentDetails(JSON.parse(storedPayment));
+      }
     }
-  }, []);
+  }, [transactionId, planName]);
 
   const planBenefits = {
     Pro: [
