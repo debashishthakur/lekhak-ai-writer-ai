@@ -120,21 +120,36 @@ class handler(BaseHTTPRequestHandler):
 def get_access_token():
     """Get OAuth access token from PhonePe"""
     try:
-        auth_url = os.getenv('PHONEPE_AUTH_URL')
-        payload = {
+        # Check environment to use correct OAuth URL
+        environment = os.getenv('PHONEPE_ENVIRONMENT', 'PRODUCTION')
+        if environment == 'SANDBOX':
+            auth_url = "https://api-preprod.phonepe.com/apis/pg-sandbox/v1/oauth/token"
+        else:
+            # Try the correct production OAuth URL
+            auth_url = "https://api.phonepe.com/apis/identity-manager/v1/oauth/token"
+        
+        # Prepare form data as per PhonePe documentation
+        form_data = {
             "client_id": os.getenv('PHONEPE_CLIENT_ID'),
             "client_secret": os.getenv('PHONEPE_CLIENT_SECRET'),
             "client_version": os.getenv('PHONEPE_CLIENT_VERSION', '1'),
             "grant_type": "client_credentials"
         }
         
-        response = requests.post(auth_url, json=payload, timeout=30)
+        headers = {
+            "Content-Type": "application/x-www-form-urlencoded"
+        }
+        
+        # Send POST request with form data
+        response = requests.post(auth_url, data=form_data, headers=headers, timeout=30)
         
         if response.status_code == 200:
             token_data = response.json()
             return token_data.get('access_token')
         else:
+            print(f"OAuth failed: {response.status_code} - {response.text}")
             return None
             
     except Exception as e:
+        print(f"OAuth error: {e}")
         return None
