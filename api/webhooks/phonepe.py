@@ -2,62 +2,66 @@ import os
 import json
 import hashlib
 import hmac
+from http.server import BaseHTTPRequestHandler
 
-def handler(request):
-    """Handle PhonePe webhooks"""
-    try:
-        # Get webhook data
-        headers = request.get('headers', {})
-        authorization_header = headers.get('Authorization', '') or headers.get('authorization', '')
-        
-        # Get webhook body
-        webhook_body = request.get('body', '')
-        if isinstance(webhook_body, str):
-            webhook_body_bytes = webhook_body.encode('utf-8')
-        else:
-            webhook_body_bytes = webhook_body
-        
-        # Verify webhook authenticity
-        if not verify_webhook_signature(authorization_header, webhook_body_bytes):
-            return {
-                'statusCode': 401,
-                'body': json.dumps({'error': 'Invalid webhook signature'})
-            }
-        
-        # Parse webhook data
-        webhook_data = json.loads(webhook_body)
-        event_type = webhook_data.get('event')
-        payload = webhook_data.get('payload', {})
-        
-        # Process different event types
-        if event_type == 'checkout.order.completed':
-            handle_successful_payment(payload)
-        elif event_type == 'checkout.order.failed':
-            handle_failed_payment(payload)
-        elif event_type == 'pg.refund.completed':
-            handle_successful_refund(payload)
-        elif event_type == 'pg.refund.failed':
-            handle_failed_refund(payload)
-        
-        return {
-            'statusCode': 200,
-            'headers': {
-                'Content-Type': 'application/json'
-            },
-            'body': json.dumps({
+class handler(BaseHTTPRequestHandler):
+    def do_POST(self):
+        """Handle PhonePe webhooks"""
+        try:
+            # Get webhook data
+            authorization_header = self.headers.get('Authorization', '')
+            
+            # Get webhook body
+            content_length = int(self.headers.get('Content-Length', 0))
+            webhook_body_bytes = self.rfile.read(content_length)
+            webhook_body = webhook_body_bytes.decode('utf-8')
+            
+            # Verify webhook authenticity
+            if not verify_webhook_signature(authorization_header, webhook_body_bytes):
+                self.send_error_response(401, {'error': 'Invalid webhook signature'})
+                return
+            
+            # Parse webhook data
+            webhook_data = json.loads(webhook_body)
+            event_type = webhook_data.get('event')
+            payload = webhook_data.get('payload', {})
+            
+            # Process different event types
+            if event_type == 'checkout.order.completed':
+                handle_successful_payment(payload)
+            elif event_type == 'checkout.order.failed':
+                handle_failed_payment(payload)
+            elif event_type == 'pg.refund.completed':
+                handle_successful_refund(payload)
+            elif event_type == 'pg.refund.failed':
+                handle_failed_refund(payload)
+            
+            response_data = {
                 "status": "success",
                 "message": "Webhook processed",
                 "event": event_type
-            })
-        }
-        
-    except Exception as e:
-        return {
-            'statusCode': 500,
-            'body': json.dumps({
+            }
+            
+            self.send_success_response(response_data)
+            
+        except Exception as e:
+            self.send_error_response(500, {
                 'error': f'Webhook processing failed: {str(e)}'
             })
-        }
+    
+    def send_success_response(self, data):
+        """Send successful response"""
+        self.send_response(200)
+        self.send_header('Content-Type', 'application/json')
+        self.end_headers()
+        self.wfile.write(json.dumps(data).encode())
+    
+    def send_error_response(self, status_code, data):
+        """Send error response"""
+        self.send_response(status_code)
+        self.send_header('Content-Type', 'application/json')
+        self.end_headers()
+        self.wfile.write(json.dumps(data).encode())
 
 def verify_webhook_signature(auth_header, webhook_body_bytes):
     """Verify webhook signature using SHA256"""
