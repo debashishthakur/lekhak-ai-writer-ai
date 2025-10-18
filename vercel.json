@@ -1,11 +1,4 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "api/**/*.py",
-      "use": "@vercel/python"
-    }
-  ],
   "rewrites": [
     {
       "source": "/((?!api/.*).*)",
@@ -26,10 +19,16 @@
       "maxDuration": 30
     },
     "api/phonepe/*.py": {
-      "maxDuration": 30
+      "maxDuration": 30,
+      "runtime": "python3.9"
     },
     "api/webhooks/*.py": {
-      "maxDuration": 30
+      "maxDuration": 30,
+      "runtime": "python3.9"
+    },
+    "api/health.py": {
+      "maxDuration": 10,
+      "runtime": "python3.9"
     }
   }
 }
