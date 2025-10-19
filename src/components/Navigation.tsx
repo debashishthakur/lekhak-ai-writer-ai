@@ -25,55 +25,53 @@ const Navigation = memo(() => {
         </button>
         
         {/* Desktop Navigation */}
-        {location.pathname === "/" && (
-          <div className="hidden md:flex items-center gap-1 ml-auto">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  className="text-white/90 hover:text-white hover:bg-white/10 transition-all duration-300 px-4 py-2 rounded-lg font-medium"
-                >
-                  Policies
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="bg-background/95 backdrop-blur-sm border-border/50">
-                <DropdownMenuItem onClick={() => navigate("/terms")}>
-                  Terms and Conditions
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/refund-policy")}>
-                  Refund Policy
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/privacy-policy")}>
-                  Privacy Policy
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            
-            <Button 
-              variant="ghost" 
-              onClick={() => navigate("/about")}
-              className="text-white/90 hover:text-white hover:bg-white/10 transition-all duration-300 px-4 py-2 rounded-lg font-medium"
-            >
-              About Us
-            </Button>
-            
-            <Button 
-              variant="ghost" 
-              onClick={() => navigate("/support")}
-              className="text-white/90 hover:text-white hover:bg-white/10 transition-all duration-300 px-4 py-2 rounded-lg font-medium"
-            >
-              Support
-            </Button>
-            
-            <Button 
-              variant="ghost" 
-              onClick={() => navigate("/pricing")}
-              className="text-white/90 hover:text-white hover:bg-white/10 transition-all duration-300 px-4 py-2 rounded-lg font-medium border border-white/20 hover:border-white/40"
-            >
-              Plans & Pricing
-            </Button>
-          </div>
-        )}
+        <div className="hidden md:flex items-center gap-1 ml-auto">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                variant="ghost" 
+                className="text-white/90 hover:text-white hover:bg-white/10 transition-all duration-300 px-4 py-2 rounded-lg font-medium"
+              >
+                Policies
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="bg-background/95 backdrop-blur-sm border-border/50">
+              <DropdownMenuItem onClick={() => navigate("/terms")}>
+                Terms and Conditions
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/refund-policy")}>
+                Refund Policy
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/privacy-policy")}>
+                Privacy Policy
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
+          <Button 
+            variant="ghost" 
+            onClick={() => navigate("/about")}
+            className="text-white/90 hover:text-white hover:bg-white/10 transition-all duration-300 px-4 py-2 rounded-lg font-medium"
+          >
+            About Us
+          </Button>
+          
+          <Button 
+            variant="ghost" 
+            onClick={() => navigate("/support")}
+            className="text-white/90 hover:text-white hover:bg-white/10 transition-all duration-300 px-4 py-2 rounded-lg font-medium"
+          >
+            Support
+          </Button>
+          
+          <Button 
+            variant="ghost" 
+            onClick={() => navigate("/pricing")}
+            className="text-white/90 hover:text-white hover:bg-white/10 transition-all duration-300 px-4 py-2 rounded-lg font-medium border border-white/20 hover:border-white/40"
+          >
+            Plans & Pricing
+          </Button>
+        </div>
         
         {/* Mobile Navigation */}
         <div className="flex items-center gap-2">
