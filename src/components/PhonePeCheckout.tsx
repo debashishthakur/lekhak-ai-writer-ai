@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -30,7 +30,7 @@ interface PhonePeCheckoutProps {
   onCancel?: () => void;
 }
 
-const PhonePeCheckout: React.FC<PhonePeCheckoutProps> = ({
+const PhonePeCheckout: React.FC<PhonePeCheckoutProps> = memo(({
   userId,
   planId,
   amount,
@@ -199,6 +199,8 @@ const PhonePeCheckout: React.FC<PhonePeCheckoutProps> = ({
       </Card>
     </div>
   );
-};
+});
+
+PhonePeCheckout.displayName = 'PhonePeCheckout';
 
 export default PhonePeCheckout;

@@ -42,8 +42,10 @@ const PaymentVerification = () => {
       setVerificationResult(result);
 
       // Log the actual response for debugging
-      console.log('Payment verification result:', result);
-      console.log('Status data structure:', result.status_data);
+      if (import.meta.env.DEV) {
+        console.log('Payment verification result:', result);
+        console.log('Status data structure:', result.status_data);
+      }
 
       // Check multiple possible paths for PhonePe state
       const phonepeState = 
@@ -52,7 +54,9 @@ const PaymentVerification = () => {
         result.status_data?.data?.state ||
         (result.status_data?.success === true ? 'COMPLETED' : undefined);
       
-      console.log('Detected PhonePe state:', phonepeState);
+      if (import.meta.env.DEV) {
+        console.log('Detected PhonePe state:', phonepeState);
+      }
       
       if (result.success && (phonepeState === 'COMPLETED' || phonepeState === 'SUCCESS')) {
         // Payment successful - store in localStorage and redirect
@@ -72,15 +76,19 @@ const PaymentVerification = () => {
         
       } else if (phonepeState === 'FAILED') {
         // Payment failed
-        console.log('Payment failed, redirecting to failure page');
+        if (import.meta.env.DEV) {
+          console.log('Payment failed, redirecting to failure page');
+        }
         setTimeout(() => {
           navigate(`/payment/failure?error=Payment failed&order=${merchantOrderId}`);
         }, 2000);
         
       } else {
         // Payment pending or unknown status
-        console.log('Payment verification failed or unknown status, redirecting to failure page');
-        console.log('Full result for debugging:', JSON.stringify(result, null, 2));
+        if (import.meta.env.DEV) {
+          console.log('Payment verification failed or unknown status, redirecting to failure page');
+          console.log('Full result for debugging:', JSON.stringify(result, null, 2));
+        }
         setTimeout(() => {
           navigate(`/payment/failure?error=Payment verification failed&order=${merchantOrderId}`);
         }, 2000);

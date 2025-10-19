@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 
 declare global {
   interface Window {
@@ -42,8 +42,10 @@ export const GoogleAuthProvider: React.FC<GoogleAuthProviderProps> = ({ children
   const [isSignedIn, setIsSignedIn] = useState(false);
 
   const initializeGoogleAuth = async () => {
-    console.log('🚀 Initializing Google Auth...');
-    console.log('🔑 Client ID:', import.meta.env.VITE_GOOGLE_CLIENT_ID);
+    if (import.meta.env.DEV) {
+      console.log('🚀 Initializing Google Auth...');
+      console.log('🔑 Client ID:', import.meta.env.VITE_GOOGLE_CLIENT_ID);
+    }
     
     try {
       if (!window.google) {
@@ -52,47 +54,67 @@ export const GoogleAuthProvider: React.FC<GoogleAuthProviderProps> = ({ children
         return;
       }
 
-      console.log('✅ Google API is available');
+      if (import.meta.env.DEV) {
+        console.log('✅ Google API is available');
+      }
 
       await new Promise((resolve) => {
-        console.log('⚙️ Calling google.accounts.id.initialize...');
+        if (import.meta.env.DEV) {
+          console.log('⚙️ Calling google.accounts.id.initialize...');
+        }
         window.google.accounts.id.initialize({
           client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
           callback: handleCredentialResponse,
           auto_select: false,
           cancel_on_tap_outside: false,
         });
-        console.log('✅ Google Auth initialized');
+        if (import.meta.env.DEV) {
+          console.log('✅ Google Auth initialized');
+        }
         resolve(true);
       });
 
       // Check if user is already signed in
       const savedUser = localStorage.getItem('googleUser');
       if (savedUser) {
-        console.log('👤 Found saved user in localStorage:', savedUser);
+        if (import.meta.env.DEV) {
+          console.log('👤 Found saved user in localStorage:', savedUser);
+        }
         const userData = JSON.parse(savedUser);
         setUser(userData);
         setIsSignedIn(true);
-        console.log('✅ Restored user session');
+        if (import.meta.env.DEV) {
+          console.log('✅ Restored user session');
+        }
       } else {
-        console.log('ℹ️ No saved user found in localStorage');
+        if (import.meta.env.DEV) {
+          console.log('ℹ️ No saved user found in localStorage');
+        }
       }
     } catch (error) {
       console.error('💥 Error initializing Google Auth:', error);
     } finally {
       setIsLoading(false);
-      console.log('✅ Google Auth initialization complete');
+      if (import.meta.env.DEV) {
+        console.log('✅ Google Auth initialization complete');
+      }
     }
   };
 
-  const handleCredentialResponse = async (response: any) => {
-    console.log('🔐 handleCredentialResponse called with:', response);
+  const handleCredentialResponse = useCallback(async (response: any) => {
+    if (import.meta.env.DEV) {
+      console.log('🔐 handleCredentialResponse called with:', response);
+    }
     
     try {
       // Decode the JWT token to get user info
-      console.log('🔑 Decoding JWT token...');
+      if (import.meta.env.DEV) {
+        console.log('🔑 Decoding JWT token...');
+      }
       const token = response.credential;
-      console.log('🔑 Token received (first 50 chars):', token?.substring(0, 50) + '...');
+      if (import.meta.env.DEV) {
+        console.log('🔑 Token received (first 50 chars):', token?.substring(0, 50) + '...');
+      }
       
       const base64Url = token.split('.')[1];
       const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
@@ -104,7 +126,9 @@ export const GoogleAuthProvider: React.FC<GoogleAuthProviderProps> = ({ children
       );
 
       const userData = JSON.parse(jsonPayload);
-      console.log('👤 Decoded user data:', userData);
+      if (import.meta.env.DEV) {
+        console.log('👤 Decoded user data:', userData);
+      }
       
       const user: GoogleUser = {
         id: userData.sub,
@@ -113,32 +137,42 @@ export const GoogleAuthProvider: React.FC<GoogleAuthProviderProps> = ({ children
         picture: userData.picture,
       };
 
-      console.log('👤 Processed user object:', user);
+      if (import.meta.env.DEV) {
+        console.log('👤 Processed user object:', user);
+      }
 
       setUser(user);
       setIsSignedIn(true);
       localStorage.setItem('googleUser', JSON.stringify(user));
-      console.log('💾 User saved to localStorage');
+      if (import.meta.env.DEV) {
+        console.log('💾 User saved to localStorage');
+      }
 
       // Remove the Google Sign-In popup if it exists
       const popup = document.getElementById('google-signin-button');
       if (popup) {
         document.body.removeChild(popup);
-        console.log('🗑️ Removed Google Sign-In popup');
+        if (import.meta.env.DEV) {
+          console.log('🗑️ Removed Google Sign-In popup');
+        }
       }
 
       // Save to Google Sheets
-      console.log('📊 About to save to Google Sheets...');
+      if (import.meta.env.DEV) {
+        console.log('📊 About to save to Google Sheets...');
+      }
       await saveToWaitlist(user);
     } catch (error) {
       console.error('💥 Error handling credential response:', error);
-      console.error('💥 Error details:', {
-        message: error.message,
-        stack: error.stack,
-        name: error.name
-      });
+      if (import.meta.env.DEV) {
+        console.error('💥 Error details:', {
+          message: error.message,
+          stack: error.stack,
+          name: error.name
+        });
+      }
     }
-  };
+  }, []);
 
   const saveToDevelopmentFallback = async (userData: GoogleUser) => {
     const signupDate = new Date().toLocaleString('en-US', {
@@ -160,7 +194,9 @@ export const GoogleAuthProvider: React.FC<GoogleAuthProviderProps> = ({ children
     );
     
     if (emailExists) {
-      console.log('⚠️ Email already exists in development waitlist');
+      if (import.meta.env.DEV) {
+        console.log('⚠️ Email already exists in development waitlist');
+      }
       return;
     }
     
@@ -177,30 +213,36 @@ export const GoogleAuthProvider: React.FC<GoogleAuthProviderProps> = ({ children
     localStorage.setItem('lekhak-waitlist', JSON.stringify(existingData));
     
     // Log the data in Google Sheets format
-    console.log('🎉 NEW WAITLIST SIGNUP (DEVELOPMENT):');
-    console.log('📧 Email:', userData.email);
-    console.log('👤 Name:', userData.name);
-    console.log('📅 Signup Date:', signupDate);
-    console.log('🏷️ Source: waitlist_signup');
-    console.log('🖼️ Profile Picture:', userData.picture);
-    console.log('💾 Saved to localStorage for development testing');
-    console.log('📊 Total waitlist entries:', existingData.length);
+    if (import.meta.env.DEV) {
+      console.log('🎉 NEW WAITLIST SIGNUP (DEVELOPMENT):');
+      console.log('📧 Email:', userData.email);
+      console.log('👤 Name:', userData.name);
+      console.log('📅 Signup Date:', signupDate);
+      console.log('🏷️ Source: waitlist_signup');
+      console.log('🖼️ Profile Picture:', userData.picture);
+      console.log('💾 Saved to localStorage for development testing');
+      console.log('📊 Total waitlist entries:', existingData.length);
+    }
     
     // Log in table format for easy copying to Google Sheets
-    console.table([{
-      Email: userData.email,
-      Name: userData.name,
-      'Signup Date': signupDate,
-      Source: 'waitlist_signup',
-      'Profile Picture': userData.picture
-    }]);
-    
-    console.log('📋 To manually add to Google Sheets, copy this row:');
-    console.log(`${userData.email}\t${userData.name}\t${signupDate}\twaitlist_signup\t${userData.picture}`);
+    if (import.meta.env.DEV) {
+      console.table([{
+        Email: userData.email,
+        Name: userData.name,
+        'Signup Date': signupDate,
+        Source: 'waitlist_signup',
+        'Profile Picture': userData.picture
+      }]);
+      
+      console.log('📋 To manually add to Google Sheets, copy this row:');
+      console.log(`${userData.email}\t${userData.name}\t${signupDate}\twaitlist_signup\t${userData.picture}`);
+    }
   };
 
   const saveToWaitlist = async (userData: GoogleUser) => {
-    console.log('🚀 Starting saveToWaitlist with data:', userData);
+    if (import.meta.env.DEV) {
+      console.log('🚀 Starting saveToWaitlist with data:', userData);
+    }
     
     try {
       const payload = {
@@ -252,11 +294,13 @@ export const GoogleAuthProvider: React.FC<GoogleAuthProviderProps> = ({ children
   };
 
 
-  const signIn = async () => {
-    console.log('👆 Sign in button clicked');
-    console.log('🌐 Current URL:', window.location.href);
-    console.log('🏠 Current origin:', window.location.origin);
-    console.log('🔑 Client ID being used:', import.meta.env.VITE_GOOGLE_CLIENT_ID);
+  const signIn = useCallback(async () => {
+    if (import.meta.env.DEV) {
+      console.log('👆 Sign in button clicked');
+      console.log('🌐 Current URL:', window.location.href);
+      console.log('🏠 Current origin:', window.location.origin);
+      console.log('🔑 Client ID being used:', import.meta.env.VITE_GOOGLE_CLIENT_ID);
+    }
     
     try {
       if (!window.google) {
@@ -279,10 +323,12 @@ export const GoogleAuthProvider: React.FC<GoogleAuthProviderProps> = ({ children
     } catch (error) {
       console.error('💥 Error signing in:', error);
       // Fallback to One Tap if OAuth fails
-      console.log('🔄 Falling back to One Tap...');
+      if (import.meta.env.DEV) {
+        console.log('🔄 Falling back to One Tap...');
+      }
       fallbackToOneTap();
     }
-  };
+  }, []);
 
   const handleTokenResponse = async (response: any) => {
     console.log('🔐 Token response received:', response);
@@ -404,7 +450,7 @@ export const GoogleAuthProvider: React.FC<GoogleAuthProviderProps> = ({ children
     console.log('✅ Fallback Google sign-in button created');
   };
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     try {
       setUser(null);
       setIsSignedIn(false);
@@ -417,7 +463,7 @@ export const GoogleAuthProvider: React.FC<GoogleAuthProviderProps> = ({ children
       console.error('Error signing out:', error);
       throw error;
     }
-  };
+  }, []);
 
   useEffect(() => {
     // Load Google Identity Services script
@@ -437,13 +483,13 @@ export const GoogleAuthProvider: React.FC<GoogleAuthProviderProps> = ({ children
     };
   }, []);
 
-  const value: GoogleAuthContextType = {
+  const value: GoogleAuthContextType = useMemo(() => ({
     user,
     isLoading,
     signIn,
     signOut,
     isSignedIn,
-  };
+  }), [user, isLoading, signIn, signOut, isSignedIn]);
 
   return (
     <GoogleAuthContext.Provider value={value}>

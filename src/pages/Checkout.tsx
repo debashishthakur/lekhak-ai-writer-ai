@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import Navigation from "@/components/Navigation";
-import StarField from "@/components/StarField";
-import PhonePeCheckout from "@/components/PhonePeCheckout";
+
+const StarField = lazy(() => import("@/components/StarField"));
+const PhonePeCheckout = lazy(() => import("@/components/PhonePeCheckout"));
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, CheckCircle } from 'lucide-react';
@@ -87,7 +88,9 @@ const Checkout = () => {
   if (!currentPlan) {
     return (
       <div className="gradient-animate min-h-screen relative">
-        <StarField />
+        <Suspense fallback={null}>
+          <StarField />
+        </Suspense>
         <Navigation />
         <div className="relative z-10 container mx-auto px-6 py-24">
           <Card className="max-w-md mx-auto text-center">
@@ -138,7 +141,9 @@ const Checkout = () => {
 
   return (
     <div className="gradient-animate min-h-screen relative">
-      <StarField />
+      <Suspense fallback={null}>
+        <StarField />
+      </Suspense>
       <Navigation />
       
       {/* Blurred background effect */}
@@ -222,16 +227,27 @@ const Checkout = () => {
           {/* Payment Component */}
           <div className="flex flex-col justify-start">
             {userId ? (
-              <PhonePeCheckout
-                userId={userId}
-                planId={currentPlan.id}
-                amount={currentPlan.amount}
-                planName={currentPlan.name}
-                planFeatures={currentPlan.features}
-                onSuccess={handlePaymentSuccess}
-                onFailure={handlePaymentFailure}
-                onCancel={handlePaymentCancel}
-              />
+              <Suspense fallback={
+                <Card className="border-muted/50">
+                  <CardContent className="pt-6 text-center">
+                    <div className="animate-pulse space-y-4">
+                      <div className="h-4 bg-muted rounded w-3/4 mx-auto"></div>
+                      <div className="h-4 bg-muted rounded w-1/2 mx-auto"></div>
+                    </div>
+                  </CardContent>
+                </Card>
+              }>
+                <PhonePeCheckout
+                  userId={userId}
+                  planId={currentPlan.id}
+                  amount={currentPlan.amount}
+                  planName={currentPlan.name}
+                  planFeatures={currentPlan.features}
+                  onSuccess={handlePaymentSuccess}
+                  onFailure={handlePaymentFailure}
+                  onCancel={handlePaymentCancel}
+                />
+              </Suspense>
             ) : (
               <Card className="border-muted/50">
                 <CardContent className="pt-6 text-center">
