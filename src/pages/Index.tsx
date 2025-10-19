@@ -8,17 +8,25 @@ const StarField = lazy(() => import("@/components/StarField"));
 
 const Index = () => {
   return (
-    <div className="gradient-animate min-h-screen relative">
+    <div className="gradient-animate min-h-screen relative overflow-x-hidden">
       <Suspense fallback={null}>
         <StarField />
       </Suspense>
       <Navigation />
       <div className="relative z-10">
         <Hero />
-        <Suspense fallback={<div className="h-20 flex items-center justify-center"><div className="animate-pulse w-full h-4 bg-muted rounded"></div></div>}>
+        <Suspense fallback={
+          <div className="h-20 flex items-center justify-center px-4">
+            <div className="animate-pulse w-full max-w-md h-4 bg-muted rounded"></div>
+          </div>
+        }>
           <Features />
         </Suspense>
-        <Suspense fallback={<div className="h-16 flex items-center justify-center"><div className="animate-pulse w-full h-4 bg-muted rounded"></div></div>}>
+        <Suspense fallback={
+          <div className="h-16 flex items-center justify-center px-4">
+            <div className="animate-pulse w-full max-w-sm h-4 bg-muted rounded"></div>
+          </div>
+        }>
           <Footer />
         </Suspense>
       </div>
