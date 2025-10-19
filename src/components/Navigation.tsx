@@ -26,7 +26,7 @@ const Navigation = memo(() => {
         
         {/* Desktop Navigation */}
         {location.pathname === "/" && (
-          <div className="hidden md:flex items-center gap-3">
+          <div className="hidden md:flex items-center gap-3 ml-auto">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button 
