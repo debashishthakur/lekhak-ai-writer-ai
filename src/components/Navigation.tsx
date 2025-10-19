@@ -26,12 +26,12 @@ const Navigation = memo(() => {
         
         {/* Desktop Navigation */}
         {location.pathname === "/" && (
-          <div className="hidden md:flex items-center gap-3 ml-auto">
+          <div className="hidden md:flex items-center gap-1 ml-auto">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button 
-                  variant="outline" 
-                  className="backdrop-blur-sm border-white/20 hover:bg-white/10"
+                  variant="ghost" 
+                  className="text-white/90 hover:text-white hover:bg-white/10 transition-all duration-300 px-4 py-2 rounded-lg font-medium"
                 >
                   Policies
                 </Button>
@@ -50,25 +50,25 @@ const Navigation = memo(() => {
             </DropdownMenu>
             
             <Button 
-              variant="outline" 
+              variant="ghost" 
               onClick={() => navigate("/about")}
-              className="backdrop-blur-sm border-white/20 hover:bg-white/10"
+              className="text-white/90 hover:text-white hover:bg-white/10 transition-all duration-300 px-4 py-2 rounded-lg font-medium"
             >
               About Us
             </Button>
             
             <Button 
-              variant="outline" 
+              variant="ghost" 
               onClick={() => navigate("/support")}
-              className="backdrop-blur-sm border-white/20 hover:bg-white/10"
+              className="text-white/90 hover:text-white hover:bg-white/10 transition-all duration-300 px-4 py-2 rounded-lg font-medium"
             >
               Support
             </Button>
             
             <Button 
-              variant="outline" 
+              variant="ghost" 
               onClick={() => navigate("/pricing")}
-              className="backdrop-blur-sm border-white/20 hover:bg-white/10"
+              className="text-white/90 hover:text-white hover:bg-white/10 transition-all duration-300 px-4 py-2 rounded-lg font-medium border border-white/20 hover:border-white/40"
             >
               Plans & Pricing
             </Button>
