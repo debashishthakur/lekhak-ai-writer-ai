@@ -33,13 +33,9 @@ export default defineConfig(({ mode }) => ({
             '@radix-ui/react-accordion',
             '@radix-ui/react-alert-dialog',
             '@radix-ui/react-avatar',
-            '@radix-ui/react-button',
-            '@radix-ui/react-card',
             '@radix-ui/react-checkbox',
             '@radix-ui/react-dialog',
             '@radix-ui/react-dropdown-menu',
-            '@radix-ui/react-form',
-            '@radix-ui/react-input',
             '@radix-ui/react-label',
             '@radix-ui/react-popover',
             '@radix-ui/react-select',
@@ -79,14 +75,6 @@ export default defineConfig(({ mode }) => ({
   // CSS optimizations
   css: {
     devSourcemap: mode === 'development',
-    postcss: {
-      plugins: mode === 'production' ? [
-        require('autoprefixer'),
-        require('cssnano')({
-          preset: 'default',
-        })
-      ] : []
-    }
   },
   
   // Production optimizations
