@@ -3,8 +3,8 @@ const ProblemStatement = () => {
     <section className="py-20 px-6 relative">
       <div className="max-w-5xl mx-auto">
         <div className="text-center space-y-8 animate-fade-in">
-          <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight">
-            🚫 Tired of switching between ChatGPT, Grammarly, and other AI tools?
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-normal tracking-tight leading-tight">
+            Tired of switching between ChatGPT, Grammarly, and other AI tools?
           </h2>
           
           <div className="space-y-6 text-lg md:text-xl text-muted-foreground max-w-4xl mx-auto leading-relaxed">

@@ -4,8 +4,8 @@ const Solution = () => {
       <div className="max-w-6xl mx-auto">
         <div className="text-center space-y-12 animate-fade-in">
           <div className="space-y-6">
-            <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight">
-              ✨ Meet Lekhak AI — The Seamless AI Writing Assistant, Right Where You Work.
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-normal tracking-tight leading-tight">
+              Meet Lekhak AI — The Seamless AI Writing Assistant, Right Where You Work.
             </h2>
             
             <div className="text-lg md:text-xl text-muted-foreground max-w-4xl mx-auto space-y-4">
@@ -16,7 +16,7 @@ const Solution = () => {
                 Lekhak AI lives right inside your browser, letting you write, rewrite, rephrase, change tone, check grammar, or even search the web — without ever leaving your window.
               </p>
               <p className="text-2xl font-medium text-foreground pt-2">
-                🪄 All your writing tools, one click away.
+                All your writing tools, one click away.
               </p>
             </div>
           </div>
@@ -34,7 +34,7 @@ const Solution = () => {
                 <tbody className="divide-y divide-primary/10">
                   <tr className="hover:bg-primary/5 transition-colors">
                     <td className="px-6 py-4 text-foreground font-medium">
-                      🧠 Unified AI Workspace
+                      Unified AI Workspace
                     </td>
                     <td className="px-6 py-4 text-muted-foreground">
                       Do everything from writing to grammar checks in one tool
@@ -42,7 +42,7 @@ const Solution = () => {
                   </tr>
                   <tr className="hover:bg-primary/5 transition-colors">
                     <td className="px-6 py-4 text-foreground font-medium">
-                      ⚡ Zero Context Switching
+                      Zero Context Switching
                     </td>
                     <td className="px-6 py-4 text-muted-foreground">
                       Stay focused — no tab hopping
@@ -50,7 +50,7 @@ const Solution = () => {
                   </tr>
                   <tr className="hover:bg-primary/5 transition-colors">
                     <td className="px-6 py-4 text-foreground font-medium">
-                      🪶 Prompt Refinement Engine
+                      Prompt Refinement Engine
                     </td>
                     <td className="px-6 py-4 text-muted-foreground">
                       Get perfect results without trial & error
@@ -58,7 +58,7 @@ const Solution = () => {
                   </tr>
                   <tr className="hover:bg-primary/5 transition-colors">
                     <td className="px-6 py-4 text-foreground font-medium">
-                      🔍 Smart Web Assist
+                      Smart Web Assist
                     </td>
                     <td className="px-6 py-4 text-muted-foreground">
                       Search, summarize, and reference the web without leaving your page
@@ -66,7 +66,7 @@ const Solution = () => {
                   </tr>
                   <tr className="hover:bg-primary/5 transition-colors">
                     <td className="px-6 py-4 text-foreground font-medium">
-                      🔒 Privacy-First Design
+                      Privacy-First Design
                     </td>
                     <td className="px-6 py-4 text-muted-foreground">
                       Use AI help without sharing personal data
