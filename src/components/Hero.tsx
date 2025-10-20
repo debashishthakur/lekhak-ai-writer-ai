@@ -69,10 +69,10 @@ const Hero = () => {
         
         {/* Rest of content below */}
         <div className="space-y-8">
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-normal tracking-tight leading-tight animate-slide-up-fade" style={{
+        <h2 className="text-3xl md:text-4xl lg:text-5xl font-normal tracking-tight leading-tight animate-slide-up-fade" style={{
           animationDelay: "0.3s",
           opacity: 0
-        }}>Stop the chaos of switching tabs!
+        }}>Stop the chaos of switching tabs!<br />
 Write better with lekhak ai</h2>
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed font-light animate-slide-up-fade" style={{
           animationDelay: "0.4s",
