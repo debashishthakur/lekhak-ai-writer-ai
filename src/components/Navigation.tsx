@@ -14,7 +14,7 @@ const Navigation = memo(() => {
   const location = useLocation();
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 px-4 md:px-6 py-4">
+    <nav className="fixed top-0 left-0 right-0 z-50 px-4 md:px-6 py-4 backdrop-blur-md bg-background/30 border-b border-white/5 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)]">
       <div className="max-w-7xl mx-auto flex justify-between items-center">
         <button 
           onClick={() => navigate("/")}
