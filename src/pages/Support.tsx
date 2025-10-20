@@ -32,10 +32,10 @@ const Support = () => {
                     <div>
                       <p className="font-semibold text-foreground">Email</p>
                       <a 
-                        href="mailto:debsthakur@gmail.com" 
+                        href="mailto:lekhakaicontact@gmail.com" 
                         className="text-foreground/70 hover:text-[#7dd3fc] transition-colors"
                       >
-                        debsthakur@gmail.com
+                        lekhakaicontact@gmail.com
                       </a>
                     </div>
                   </div>
