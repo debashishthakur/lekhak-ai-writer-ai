@@ -83,9 +83,7 @@ const Hero = () => {
             animationDelay: "0.3s",
             opacity: 0
           }}>
-            Write better with AI,
-            <br />
-            <span className="font-light">effortlessly</span>
+            Tired of switching tabs between ChatGPT, Claude and other AI tools every time you need to write? We got you !
           </h2>
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed font-light animate-slide-up-fade" style={{
             animationDelay: "0.4s",
