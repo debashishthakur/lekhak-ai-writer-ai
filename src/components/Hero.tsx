@@ -73,7 +73,7 @@ const Hero = () => {
           animationDelay: "0.3s",
           opacity: 0
         }}>Stop the chaos of switching tabs!<br />
-Write better with lekhak ai</h2>
+Write better with Lekhak AI</h2>
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed font-light animate-slide-up-fade" style={{
           animationDelay: "0.4s",
           opacity: 0
