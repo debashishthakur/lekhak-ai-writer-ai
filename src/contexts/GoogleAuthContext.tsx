@@ -2,8 +2,8 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 
 declare global {
   interface Window {
-    google: any;
-    gapi: any;
+    google: unknown;
+    gapi: unknown;
   }
 }
 
@@ -101,7 +101,7 @@ export const GoogleAuthProvider: React.FC<GoogleAuthProviderProps> = ({ children
     }
   };
 
-  const handleCredentialResponse = useCallback(async (response: any) => {
+  const handleCredentialResponse = useCallback(async (response: { credential: string }) => {
     if (import.meta.env.DEV) {
       console.log('🔐 handleCredentialResponse called with:', response);
     }
@@ -172,9 +172,9 @@ export const GoogleAuthProvider: React.FC<GoogleAuthProviderProps> = ({ children
         });
       }
     }
-  }, []);
+  }, [saveToWaitlist]);
 
-  const saveToDevelopmentFallback = async (userData: GoogleUser) => {
+  const saveToDevelopmentFallback = useCallback(async (userData: GoogleUser) => {
     const signupDate = new Date().toLocaleString('en-US', {
       timeZone: 'UTC',
       year: 'numeric',
@@ -237,9 +237,9 @@ export const GoogleAuthProvider: React.FC<GoogleAuthProviderProps> = ({ children
       console.log('📋 To manually add to Google Sheets, copy this row:');
       console.log(`${userData.email}\t${userData.name}\t${signupDate}\twaitlist_signup\t${userData.picture}`);
     }
-  };
+  }, []);
 
-  const saveToWaitlist = async (userData: GoogleUser) => {
+  const saveToWaitlist = useCallback(async (userData: GoogleUser) => {
     if (import.meta.env.DEV) {
       console.log('🚀 Starting saveToWaitlist with data:', userData);
     }
@@ -291,7 +291,7 @@ export const GoogleAuthProvider: React.FC<GoogleAuthProviderProps> = ({ children
       console.log('🛠️ Falling back to development mode...');
       await saveToDevelopmentFallback(userData);
     }
-  };
+  }, [saveToDevelopmentFallback]);
 
 
   const signIn = useCallback(async () => {
@@ -330,7 +330,7 @@ export const GoogleAuthProvider: React.FC<GoogleAuthProviderProps> = ({ children
     }
   }, []);
 
-  const handleTokenResponse = async (response: any) => {
+  const handleTokenResponse = async (response: { access_token?: string }) => {
     console.log('🔐 Token response received:', response);
     
     if (response.access_token) {
@@ -378,7 +378,7 @@ export const GoogleAuthProvider: React.FC<GoogleAuthProviderProps> = ({ children
       cancel_on_tap_outside: false,
     });
     
-    window.google.accounts.id.prompt((notification: any) => {
+    window.google.accounts.id.prompt((notification: { isNotDisplayed: () => boolean; isSkippedMoment: () => boolean }) => {
       console.log('🔔 One Tap notification:', notification);
       if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
         console.log('⚠️ One Tap also failed, creating manual button...');
