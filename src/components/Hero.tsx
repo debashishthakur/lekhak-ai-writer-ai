@@ -43,7 +43,7 @@ const Hero = () => {
         </>;
     }
     return <>
-        Join waitlist
+        Talk to us?
         <span className="mx-3 text-muted-foreground">|</span>
         <LogIn className="h-5 w-5" />
       </>;
@@ -84,17 +84,32 @@ Write better with Lekhak AI</h2>
           </p>
         </div>
 
-        {/* CTA Button */}
+        {/* CTA Buttons */}
         <div className="flex flex-col items-center gap-4 pt-4 animate-slide-up-fade" style={{
         animationDelay: "0.6s",
         opacity: 0
       }}>
+          <Button 
+            variant="chrome" 
+            size="xl" 
+            className="group"
+            asChild
+          >
+            <a 
+              href="https://chromewebstore.google.com/detail/lekhak-assistant/ekajnolemiocnpkabidphpfkanbbcedn?authuser=0&hl=en-GB"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Get LekhakAI
+            </a>
+          </Button>
+
           <Button variant="pill" size="xl" className="group" onClick={handleJoinWaitlist} disabled={isLoading || isSigningIn || isSignedIn}>
             {getButtonContent()}
           </Button>
           
           <p className="text-sm text-muted-foreground font-light">
-            {isSignedIn ? "You're on the waitlist!" : "No credit card required"}
+            {isSignedIn ? "We will get back to you" : "No credit card required"}
           </p>
         </div>
 
