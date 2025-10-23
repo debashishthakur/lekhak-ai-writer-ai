@@ -73,6 +73,14 @@ export default {
             height: "0",
           },
         },
+        "border-glow": {
+          "0%, 100%": {
+            boxShadow: "0 0 30px rgba(255,255,255,0.3), 0 0 60px rgba(255,255,255,0.1)",
+          },
+          "50%": {
+            boxShadow: "0 0 50px rgba(255,255,255,0.5), 0 0 80px rgba(255,255,255,0.2)",
+          },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -80,6 +88,7 @@ export default {
         "fade-in": "fade-in 1s ease-out forwards",
         "slide-up": "slide-up 1s ease-out forwards",
         "float": "float 6s ease-in-out infinite",
+        "border-glow": "border-glow 2s ease-in-out infinite",
       },
     },
   },
