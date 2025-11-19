@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { GoogleAuthProvider } from "@/contexts/GoogleAuthContext";
 import { Suspense, lazy } from "react";
+import { SmoothScroll } from "@/components/SmoothScroll";
 
 const Index = lazy(() => import("./pages/Index"));
 const Pricing = lazy(() => import("./pages/Pricing"));
@@ -32,6 +33,7 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
+        <SmoothScroll />
         <BrowserRouter>
           <Suspense fallback={<LoadingSpinner />}>
             <Routes>
