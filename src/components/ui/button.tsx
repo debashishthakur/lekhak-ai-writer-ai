@@ -17,6 +17,7 @@ const buttonVariants = cva(
         link: "text-primary underline-offset-4 hover:underline",
         pill: "bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-8 shadow-lg hover:shadow-xl hover:scale-[1.02]",
         "pill-outline": "border-2 border-primary/30 bg-transparent hover:bg-primary/10 hover:border-primary/60 rounded-full px-8",
+        chrome: "bg-black text-white hover:bg-black/90 rounded-full px-8 shadow-lg border-2 border-white/20 hover:border-white/40 hover:scale-[1.02] transition-all duration-300 font-semibold",
       },
       size: {
         default: "h-10 px-4 py-2",
